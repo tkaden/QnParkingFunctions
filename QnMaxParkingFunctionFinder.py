@@ -106,8 +106,8 @@ def FindAll(matrix):
             for i in range(len(matrix)):
                 loop_counter += 1
                 childNode = Node(i, currHeight + 1, None, node)
-                if not hasAncestor(childNode) and getValue(childNode, matrix) >= 0: #and (____ or _____)
-                    childNode.pfunction = node.pfunction[:] #chloe henderson is python god
+                if not hasAncestor(childNode) and getValue(childNode, matrix) >= 0:
+                    childNode.pfunction = node.pfunction[:]
                     childNode.pfunction[i] = getValue(childNode, matrix)
                     nodeList.append(childNode)
                     print(childNode.pfunction)
