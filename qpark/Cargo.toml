@@ -1,0 +1,12 @@
+[package]
+name = "qpark"
+version = "0.1.0"
+edition = "2021"
+description = "Canonical enumeration of maximal G-parking functions and the box partition of the parking-function multicomplex"
+
+[dependencies]
+rayon = "1"
+
+[profile.release]
+lto = true
+codegen-units = 1

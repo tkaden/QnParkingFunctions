@@ -1,0 +1,25 @@
+== sandpile group (Smith normal form of reduced Laplacian) ==
+invariant factors     : [2, 2, 8, 24, 24, 24, 96]
+group structure       : Z_2 x Z_2 x Z_8 x Z_24 x Z_24 x Z_24 x Z_96
+group order           : 42467328 [ok]
+2-rank (even factors) : 7
+maximal PF classes    : 3040575 distinct of 3040575 [ok]
+elapsed: 2.71s
+
+== mobius == skipped (brute-force space 1073741824 too large)
+
+== orbit census under coordinate permutations (S_4) ==
+maximal PFs           : 3040575
+orbits                : 128234
+orbit sizes (size x count): [(1, 1), (3, 2), (4, 26), (6, 38), (12, 2981), (24, 125186)]
+elapsed: 2.76s
+
+== BCT canonical box dom(f^n), f^n(v)=wgt(v)-1, inside the sandpile group ==
+box volume            : 20736
+distinct classes      : 20736 [ok]
+contains identity     : true
+closed under addition : false
+group order           : 42467328
+group 2-rank          : 7
+elapsed: 9.86ms
+

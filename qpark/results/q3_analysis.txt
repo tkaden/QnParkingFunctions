@@ -1,0 +1,48 @@
+== sandpile group (Smith normal form of reduced Laplacian) ==
+invariant factors     : [2, 8, 24]
+group structure       : Z_2 x Z_8 x Z_24
+group order           : 384 [ok]
+2-rank (even factors) : 3
+maximal PF classes    : 133 distinct of 133 [ok]
+elapsed: 99.67µs
+
+== Mobius function of the parking-function poset ==
+parking functions     : 384
+maximal (degree g)    : 133
+nonzero mu(x, 1hat)   : 383 of 384
+crosscut identity     : -sum mu*vol = 384 [ok]
+BCT Lemma 4.12        : [ok]
+degree | mu value | count
+     0 |       -6 | 1
+     1 |        0 | 1
+     1 |        1 | 3
+     1 |        2 | 3
+     2 |        2 | 6
+     2 |        3 | 6
+     2 |        4 | 15
+     2 |        6 | 1
+     3 |       -6 | 10
+     3 |       -5 | 18
+     3 |       -4 | 24
+     3 |       -3 | 24
+     4 |        2 | 81
+     4 |        3 | 43
+     4 |        4 | 15
+     5 |       -1 | 133
+elapsed: 2.02ms
+
+== orbit census under coordinate permutations (S_3) ==
+maximal PFs           : 133
+orbits                : 27
+orbit sizes (size x count): [(1, 1), (3, 8), (6, 18)]
+elapsed: 433.56µs
+
+== BCT canonical box dom(f^n), f^n(v)=wgt(v)-1, inside the sandpile group ==
+box volume            : 24
+distinct classes      : 24 [ok]
+contains identity     : true
+closed under addition : false
+group order           : 384
+group 2-rank          : 3
+elapsed: 33.94µs
+
