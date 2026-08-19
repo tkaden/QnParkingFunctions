@@ -139,6 +139,125 @@ pub fn enumerate<F: FnMut(Boxes)>(g: &Graph, cb: &mut F) {
     dfs(g, &mut s, cb);
 }
 
+impl State {
+    fn reset(&mut self, g: &Graph) {
+        self.burnt = 1;
+        self.order.clear();
+        self.order.push(0);
+        for v in 0..g.n {
+            self.wcnt[v] = g.adj[0][v];
+            self.w2[v] = 0;
+        }
+    }
+}
+
+/// Burn v without recording undo information (single-descent use only).
+fn burn_forward(g: &Graph, s: &mut State, v: usize) {
+    s.bottom[v] = s.w2[v];
+    s.top[v] = s.wcnt[v] - 1;
+    for u in 1..v {
+        if s.burnt >> u & 1 == 0 {
+            s.w2[u] = s.wcnt[u];
+        }
+    }
+    s.burnt |= 1 << v;
+    s.order.push(v as u32);
+    let mut m = g.nbr[v] & !s.burnt;
+    while m != 0 {
+        let w = m.trailing_zeros() as usize;
+        m &= m - 1;
+        s.wcnt[w] += g.adj[v][w];
+    }
+}
+
+fn splitmix64(x: &mut u64) -> u64 {
+    *x = x.wrapping_add(0x9e3779b97f4a7c15);
+    let mut z = *x;
+    z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111eb);
+    z ^ (z >> 31)
+}
+
+pub struct Estimate {
+    pub samples: u64,
+    pub leaves_mean: f64,
+    pub leaves_stderr: f64,
+    pub trees_mean: f64,
+    pub trees_stderr: f64,
+}
+
+/// Knuth's random-descent estimator for the search-tree leaf count (= number
+/// of maximal parking functions) and the box-volume total (= spanning trees).
+/// Each sample walks root-to-leaf choosing a child uniformly, multiplying the
+/// branching factors; dead ends contribute 0. Unbiased; the standard error is
+/// governed by tree imbalance, so treat the intervals honestly.
+pub fn estimate(g: &Graph, samples: u64, seed: u64) -> Estimate {
+    let nchunks = 256u64;
+    let per = samples.div_ceil(nchunks);
+    let sums: Vec<(f64, f64, f64, f64)> = (0..nchunks)
+        .into_par_iter()
+        .map(|c| {
+            let mut rng = seed ^ (c.wrapping_mul(0xa076_1d64_78bd_642f) + 1);
+            let mut s = State::root(g);
+            let (mut l1, mut l2, mut t1, mut t2) = (0f64, 0f64, 0f64, 0f64);
+            for _ in 0..per {
+                s.reset(g);
+                let mut prod = 1f64;
+                let (leaf_est, tree_est) = loop {
+                    if s.depth() == g.n {
+                        let vol: f64 =
+                            (1..g.n).map(|v| (s.top[v] - s.bottom[v] + 1) as f64).product();
+                        break (prod, prod * vol);
+                    }
+                    let mut count = 0u32;
+                    for v in 1..g.n {
+                        if s.burnt >> v & 1 == 0 && s.wcnt[v] > s.w2[v] {
+                            count += 1;
+                        }
+                    }
+                    if count == 0 {
+                        break (0.0, 0.0);
+                    }
+                    let mut pick = splitmix64(&mut rng) % count as u64;
+                    let mut chosen = 0usize;
+                    for v in 1..g.n {
+                        if s.burnt >> v & 1 == 0 && s.wcnt[v] > s.w2[v] {
+                            if pick == 0 {
+                                chosen = v;
+                                break;
+                            }
+                            pick -= 1;
+                        }
+                    }
+                    prod *= count as f64;
+                    burn_forward(g, &mut s, chosen);
+                    if dead_end(g, &s) {
+                        break (0.0, 0.0);
+                    }
+                };
+                l1 += leaf_est;
+                l2 += leaf_est * leaf_est;
+                t1 += tree_est;
+                t2 += tree_est * tree_est;
+            }
+            (l1, l2, t1, t2)
+        })
+        .collect();
+    let n = (per * nchunks) as f64;
+    let (l1, l2, t1, t2) = sums
+        .iter()
+        .fold((0f64, 0f64, 0f64, 0f64), |a, b| (a.0 + b.0, a.1 + b.1, a.2 + b.2, a.3 + b.3));
+    let mean = |s1: f64| s1 / n;
+    let stderr = |s1: f64, s2: f64| ((s2 / n - (s1 / n) * (s1 / n)).max(0.0) / n).sqrt();
+    Estimate {
+        samples: per * nchunks,
+        leaves_mean: mean(l1),
+        leaves_stderr: stderr(l1, l2),
+        trees_mean: mean(t1),
+        trees_stderr: stderr(t1, t2),
+    }
+}
+
 /// Collect search states at the given depth (or leaves reached earlier), for
 /// parallel processing of the subtrees.
 fn frontier(g: &Graph, depth: usize) -> Vec<State> {

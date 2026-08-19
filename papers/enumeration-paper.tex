@@ -1,0 +1,286 @@
+\documentclass[11pt]{amsart}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[margin=1.2in]{geometry}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\PF}{\mathcal{P}}
+\newcommand{\ZZ}{\mathbb{Z}}
+
+% Updated version (August 2026) of the 2016--2019 draft
+% "A computational approach to the enumeration of G-parking functions".
+% TODO(Tyler): confirm author list and affiliations before circulating.
+
+\title[Enumeration of maximal $G$-parking functions]{A computational
+approach to the enumeration of maximal $G$-parking functions, revisited}
+\author{Tyler Aden}
+\author{Brian Benson}
+\date{Updated draft of August 19, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Given a connected multigraph $G$ with root $q$, we give an algorithm that
+lists every maximal $G$-parking function exactly once, with no duplicate
+suppression, by enumerating the lexicographically minimal Dhar burn orders.
+Its correctness rests on a structure theorem of independent interest: the
+fibers of the map assigning to each $G$-parking function its lex-minimal
+burn order are coordinate boxes which partition the set of all $G$-parking
+functions, with box tops exactly the maximal parking functions. One search
+pass therefore also computes the number of spanning trees $T_G(1,1)$ and the
+full degree enumerator $T_G(1,y)$. Our implementation enumerates the
+$3\,040\,575$ maximal parking functions of the hypercube $Q_4$ in under two
+seconds on a workstation, confirming by direct enumeration the value
+previously known only through the chromatic polynomial, and computes
+$T_{Q_4}(1,y)$, which appears to be new. We record the resulting data,
+including the $133$-element catalog for $Q_3$ that motivated this project.
+\end{abstract}
+
+\section{Introduction}
+
+Let $G=(V,E)$ be a connected multigraph with a root $q \in V$. A
+\emph{$G$-parking function} \cite{ps} (equivalently a \emph{superstable
+configuration} of the abelian sandpile model) is a function
+$f\colon V\setminus\{q\}\to\ZZ_{\ge0}$ such that every nonempty
+$A\subseteq V\setminus\{q\}$ contains a vertex $v$ with
+$f(v) < \sum_{u\notin A} a(v,u)$, where $a(v,u)$ is the edge multiplicity.
+The number of $G$-parking functions equals the number of spanning trees of
+$G$, and many bijections realizing this are known
+\cite{cl,cp,bct}. The \emph{maximal} $G$-parking functions (under the
+coordinatewise order) all have the same total degree $g = |E|-|V|+1$, are in
+bijection with the acyclic orientations of $G$ with unique source at $q$,
+and number $T_G(1,0)$, the Tutte evaluation \cite{bct}.
+
+The original (2016) version of this project sought an algorithm to list the
+maximal $Q_n$-parking functions in order to study, experimentally, the
+formula for the number of spanning trees of the hypercube,
+\begin{equation}\label{eq:stanley}
+  c(Q_n) \;=\; 2^{2^n-n-1}\prod_{k=1}^{n} k^{\binom nk},
+\end{equation}
+for which Stanley's \emph{Enumerative Combinatorics} volume~2 states, at
+the end of Example~5.6.10, that ``a direct combinatorial proof of this
+formula is not known'' \cite{ec2}. Two combinatorial (though not bijective)
+proofs were subsequently given by Bernardi \cite{bernardi}; the second
+edition of \cite{ec2} (2024, Notes to Chapter~5) records that a
+\emph{bijective} proof remains unknown. The present update replaces the
+original breadth-first search over all burn orders --- whose running time
+grew roughly like $n^n$ and which required cluster hardware and a trie to
+deduplicate output already for $Q_4$ --- by a canonical-order search that
+produces each maximal parking function exactly once.
+
+Our contributions are:
+\begin{enumerate}
+\item an enumeration algorithm for maximal $G$-parking functions with no
+duplicate suppression and $O(|V|)$ working memory per search path
+(Section~\ref{sec:algo}); we are not aware of any published enumeration
+algorithm stated for maximal parking functions (poly-delay enumeration of
+acyclic orientations with a prescribed unique source \cite{conte} yields
+one implicitly through \cite[Thm.~3.1]{bct});
+\item the correctness proof via a fiber theorem: the search leaves are
+boxes partitioning all of $\PF(G,q)$ (Theorem~\ref{thm:fiber}), which
+simultaneously yields $T_G(1,1)$ and $T_G(1,y)$ in the same pass
+(Corollary~\ref{cor:tutte}) and constitutes an explicit form of Merino's
+$M$-shellability theorem for cographic matroids \cite{merino01} --- see the
+companion note in this repository for that discussion;
+\item computational results (Section~\ref{sec:data}): direct-enumeration
+confirmation of $T_{Q_4}(1,0)=3\,040\,575$ and
+$c(Q_4)=42\,467\,328$; the degree enumerator $T_{Q_4}(1,y)$; the catalog
+for $Q_3$; and sandpile-group data through $Q_5$.
+\end{enumerate}
+
+\section{Preliminaries}
+
+Dhar's burning criterion \cite{dhar}: $f$ is a $G$-parking function iff,
+starting from $q$ burnt and repeatedly burning any vertex $v$ whose burnt
+neighbors have total edge weight exceeding $f(v)$, every vertex burns. The
+process is abelian, so the following is well defined.
+
+\begin{definition}
+The \emph{canonical burn order} $\sigma(f)$ of $f\in\PF(G,q)$ is the burn
+order obtained by always burning the smallest-labeled burnable vertex, for a
+fixed vertex labeling $q=0,1,\dots,n-1$.
+\end{definition}
+
+For an ordering $\sigma$ starting at $q$, write $w_k(v)$ for the weight of
+edges from $v$ to $\{\sigma_0,\dots,\sigma_{k-1}\}$, and for $v = \sigma_k$
+set $\mathrm{top}_\sigma(v) = w_k(v)-1$ and
+$\mathrm{bot}_\sigma(v) = \max\{ w_j(v) : j<k,\ \sigma_j > v \}$ (zero if no
+such $j$): the \emph{skip watermark}, i.e.\ the burnt-neighbor weight of $v$
+the last time a larger vertex was burned in preference to it.
+
+\section{The fiber theorem and the algorithm}\label{sec:algo}
+
+\begin{theorem}\label{thm:fiber}
+For $f\in\PF(G,q)$ with $\sigma=\sigma(f)$,
+\[
+\{g\in\PF(G,q):\sigma(g)=\sigma\}
+ = \{g : \mathrm{bot}_\sigma \le g \le \mathrm{top}_\sigma\},
+\]
+and every vector in the box is a parking function. Consequently the boxes
+partition $\PF(G,q)$; the box tops are exactly the maximal parking
+functions, each arising once.
+\end{theorem}
+
+\begin{proof}
+If $\sigma(g)=\sigma$ then at step $k$ burnability gives
+$g(\sigma_k)\le\mathrm{top}_\sigma(\sigma_k)$, and lex-minimality forces
+every smaller unburnt $u$ to be unburnable at that step, i.e.\
+$g(u)\ge w_k(u)$; maximizing over the skip steps of $u$ gives
+$g\ge\mathrm{bot}_\sigma$. Conversely, if
+$\mathrm{bot}_\sigma\le g\le\mathrm{top}_\sigma$, induction on $k$ shows the
+canonical process for $g$ reproduces $\sigma$: $\sigma_k$ is burnable since
+$g(\sigma_k)<w_k(\sigma_k)$, and any smaller unburnt $u$ satisfies
+$g(u)\ge\mathrm{bot}_\sigma(u)\ge w_k(u)$ because $u$ is skipped at step
+$k$. Hence all of $V$ burns: $g\in\PF(G,q)$ with $\sigma(g)=\sigma$.
+For the second statement: every edge contributes to
+$w_k(\sigma_k)$ exactly once over the run, so
+$\sum_v \mathrm{top}_\sigma(v) = |E|-|V|+1 = g$, making each top maximal
+\cite[Prop.~2.3, Cor.~3.2]{bct}; the top lies in its own box, so
+$\sigma\mapsto\mathrm{top}_\sigma$ is injective, and a maximal $m$ satisfies
+$m\le \mathrm{top}_{\sigma(m)}$ with equal degree, hence equality.
+\end{proof}
+
+\begin{corollary}\label{cor:tutte}
+With $b_m := \mathrm{bot}_{\sigma(m)}$ and $[k]_y = 1+y+\dots+y^{k-1}$,
+\[
+T_G(1,y)=\sum_{m\ \mathrm{maximal}}\ \prod_{v\ne q}
+  \bigl[\,m(v)-b_m(v)+1\,\bigr]_y,
+\qquad
+T_G(1,1)=\sum_m \prod_{v\ne q}\bigl(m(v)-b_m(v)+1\bigr).
+\]
+\end{corollary}
+
+\begin{proof}
+Group Merino's identity $T_G(1,y)=\sum_{f}y^{\,g-\deg f}$ \cite{merino97}
+by the boxes.
+\end{proof}
+
+\subsection*{The search}
+The algorithm is a depth-first search over burn prefixes. The state keeps
+the burnt set, each vertex's current burnt-neighbor weight
+$\mathrm{wcnt}(v)$, and its watermark $w_2(v)$. From a prefix, vertex $v$
+may be burned iff it is unburnt and $\mathrm{wcnt}(v) > w_2(v)$; burning $v$
+sets $w_2(u)\leftarrow\mathrm{wcnt}(u)$ for every smaller unburnt $u$
+(their skip watermark) and adds $v$'s edge weights to its unburnt
+neighbors. A leaf at depth $n$ emits the box
+$[\mathrm{bot},\mathrm{top}]$; in particular its top is one maximal parking
+function, and by Theorem~\ref{thm:fiber} each maximal parking function is
+emitted exactly once. A cheap dead-end test (an unburnt vertex with
+$\mathrm{wcnt}=w_2$ and no unburnt neighbor can never burn) prunes hopeless
+branches. Undoing a burn restores $O(\deg v)$ words, so the working memory
+per path is $O(|V|)$, the leaves need no deduplication structure, and
+disjoint subtrees parallelize trivially. This replaces both the $n^n$-time
+Python search (2016) and the MPI/trie C implementation (2019) of the
+earlier drafts.
+
+Correctness and the partition property are validated in the implementation
+by exhaustive comparison with brute-force Dhar enumeration on $Q_1$--$Q_3$,
+on the $4$-vertex multigraph example of the 2016 code (reproducing its four
+maximal parking functions), and on dozens of seeded random connected
+multigraphs; tree counts are cross-checked against Matrix-Tree determinants
+and, for hypercubes, against \eqref{eq:stanley}.
+
+\section{Data for hypercubes}\label{sec:data}
+
+\begin{center}
+\begin{tabular}{rrrrr}
+\toprule
+$n$ & $g$ & maximal PFs $=T(1,0)$ & spanning trees & time \\
+\midrule
+2 & 1  & 3 & 4 & --- \\
+3 & 5  & 133 & 384 & ms \\
+4 & 17 & 3\,040\,575 & 42\,467\,328 & 1.5 s \\
+5 & 49 & 81\,768\,640\,551\,939\,777 & $\approx 2.08\times10^{19}$ &
+  \emph{not listable} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The $Q_4$ row is, to our knowledge, the first direct-enumeration
+confirmation of the count $3\,040\,575$, previously derived from the
+chromatic polynomial of $Q_4$; the $Q_5$ count is from the chromatic
+polynomial of $Q_5$ (OEIS A334278) via
+$T(1,0) = |[x]\,\chi_{Q_n}(x)|$, and a Knuth random-descent estimator over
+$2\times10^8$ samples of our search tree gives
+$(7.4\pm0.5)\times10^{16}$, consistent with it. The degree enumerator of
+$Q_4$-parking functions (equivalently $T_{Q_4}(1,y)$, the $h$-vector of the
+cographic matroid of $Q_4$), computed in the same $1.5$-second pass:
+\[
+1,\ 15,\ 120,\ 680,\ 3044,\ 11388,\ 36808,\ 104984,\ 267894,\ 616906,
+\]
+\[
+1287688,\ 2436504,\ 4156516,\ 6306364,\ 8278008,\ 8903016,\ 7016817,\
+3040575
+\]
+(degrees $0$ through $17$). For $Q_3$ the row is
+$1, 7, 28, 76, 139, 133$. The Smith normal forms of the reduced Laplacians
+give the sandpile groups
+$K(Q_3)=\ZZ_2\times\ZZ_8\times\ZZ_{24}$,
+$K(Q_4)=\ZZ_2^2\times\ZZ_8\times\ZZ_{24}^3\times\ZZ_{96}$, and
+$K(Q_5)=\ZZ_2^5\times\ZZ_6\times\ZZ_{24}^4\times\ZZ_{48}
+ \times\ZZ_{192}^3\times\ZZ_{960}$,
+consistent with all three theorems of Bai \cite{bai}. The full $Q_3$
+catalog ($133$ maximal parking functions, with their boxes) accompanies the
+implementation.
+
+\section{Remarks and questions}
+
+The 2016 draft asked about the intersections of the down-sets
+$\mathrm{dom}(f)$ of maximal parking functions, following
+\cite[Cor.~3.3]{bct}. Theorem~\ref{thm:fiber} answers a sharpened form of
+that question: the down-sets can be replaced by canonical disjoint boxes,
+eliminating inclusion--exclusion altogether. Questions we consider open and
+interesting:
+\begin{enumerate}
+\item Is the box partition, in lexicographic order of the burn orders, an
+$M$-shelling in the sense of Chari? (Verified computationally on all our
+test graphs; Merino \cite{merino01} proved existence inductively.)
+\item The bottom vector $b_m$ is a statistic on acyclic orientations with
+unique source that appears to be new; what does it correspond to under the
+known bijections to safe spanning trees?
+\item The bijective proof of \eqref{eq:stanley} through this machinery ---
+see the companion paper on the support-product theorem.
+\end{enumerate}
+
+\begin{thebibliography}{99}
+\bibitem{bai} H.~Bai, \emph{On the critical group of the $n$-cube}, Linear
+Algebra Appl.\ 369 (2003) 251--261.
+\bibitem{bct} B.~Benson, D.~Chakrabarty, P.~Tetali, \emph{$G$-parking
+functions, acyclic orientations and spanning trees}, Discrete Math.\ 310
+(2010) 1340--1353.
+\bibitem{bernardi} O.~Bernardi, \emph{On the spanning trees of the
+hypercube and other products of graphs}, Electron.\ J.\ Combin.\ 19(4)
+(2012), \#P51.
+\bibitem{cl} R.~Cori, Y.~Le~Borgne, \emph{The sand-pile model and Tutte
+polynomials}, Adv.\ Appl.\ Math.\ 30 (2003) 44--52.
+\bibitem{conte} A.~Conte, R.~Grossi, A.~Marino, R.~Rizzi, \emph{Efficient
+enumeration of graph orientations with sources}, Discrete Appl.\ Math.\ 246
+(2018) 22--37.
+\bibitem{cp} D.~Chebikin, P.~Pylyavskyy, \emph{A family of bijections
+between $G$-parking functions and spanning trees}, J.\ Combin.\ Theory
+Ser.~A 110 (2005) 31--41.
+\bibitem{dhar} D.~Dhar, \emph{Self-organized critical state of sandpile
+automaton models}, Phys.\ Rev.\ Lett.\ 64 (1990) 1613--1616.
+\bibitem{ec2} R.~P.~Stanley, \emph{Enumerative Combinatorics, Volume 2},
+Cambridge Univ.\ Press, 1999; 2nd ed.\ 2024.
+\bibitem{merino97} C.~Merino L\'opez, \emph{Chip firing and the Tutte
+polynomial}, Ann.\ Comb.\ 1 (1997) 253--259.
+\bibitem{merino01} C.~Merino, \emph{The chip firing game and matroid
+complexes}, Discrete Math.\ Theor.\ Comput.\ Sci.\ Proc.\ AA (2001)
+245--256.
+\bibitem{ps} A.~Postnikov, B.~Shapiro, \emph{Trees, parking functions,
+syzygies, and deformations of monomial ideals}, Trans.\ Amer.\ Math.\ Soc.\
+356 (2004) 3109--3142.
+\end{thebibliography}
+
+\end{document}

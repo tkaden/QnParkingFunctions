@@ -1,0 +1,394 @@
+\documentclass[11pt]{amsart}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[margin=1.2in]{geometry}
+\usepackage{hyperref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+
+\newcommand{\PF}{\mathcal{P}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\bott}[1]{\mathrm{bot}_{#1}}
+\newcommand{\topp}[1]{\mathrm{top}_{#1}}
+
+\title[The canonical box partition of $G$-parking functions]{A canonical box
+partition of the set of $G$-parking functions,\\ with an application to the
+spanning trees of the hypercube}
+\author{Working note --- QnParkingFunctions project}
+\date{Draft of August 19, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+For a connected multigraph $G$ with root $q$ and a total order on the
+vertices, we show that the fibers of the map sending each $G$-parking
+function to its lexicographically minimal Dhar burn order are coordinate
+boxes. The boxes partition the set of all $G$-parking functions; their tops
+are exactly the maximal $G$-parking functions. This yields sign-free formulas
+for $T_G(1,1)$ and $T_G(1,y)$ as sums of products of $q$-integers over
+acyclic orientations with unique sink, gives an explicit and canonical
+construction of an $M$-partition of the parking-function multicomplex whose
+existence follows from Merino's inductive proof of Chari's conjecture for
+cographic matroids, and, for the hypercube $Q_n$, contains the canonical box
+of Benson--Chakrabarty--Tetali as its largest cell. We also prove a
+support-product theorem for the spanning trees of $G\times K_2$ whose
+iteration telescopes to Stanley's formula for the number of spanning trees
+of $Q_n$, give an explicit bijection realizing its full-support slice, and
+state precisely the bijective step that remains open.
+\end{abstract}
+
+\section{Setup}
+
+Let $G=(V,E)$ be a connected multigraph with $n$ vertices, a distinguished
+root $q$, and a fixed total order on $V$ with $q$ smallest; we write
+$V=\{v : 0 \le v \le n-1\}$ with $q=0$. For $u,v \in V$ let $a(u,v)$ denote
+the number of edges between $u$ and $v$.
+
+A function $f\colon V\setminus\{q\} \to \ZZ_{\ge 0}$ is a
+\emph{$G$-parking function} (equivalently, a \emph{superstable
+configuration}) if for every nonempty $A \subseteq V\setminus\{q\}$ there is
+$v\in A$ with $f(v) < \sum_{u \notin A} a(v,u)$. We write $\PF(G,q)$ for the
+set of $G$-parking functions and recall Dhar's criterion
+\cite{dhar,bct}: $f \in \PF(G,q)$ if and only if the following process burns
+every vertex. Initially only $q$ is burnt; a vertex $v$ may burn whenever
+\[
+  f(v) \;<\; w(v) \;:=\; \sum_{u \text{ burnt}} a(v,u),
+\]
+and the process is abelian: if some order burns everything, every maximal
+sequence of legal burns does.
+
+By downward closure (\cite[Prop.~2.2]{bct}) $\PF(G,q)$ is an order ideal of
+$\ZZ_{\ge 0}^{V \setminus \{q\}}$ under the coordinatewise order; all its
+maximal elements have the same total degree $g := |E|-|V|+1$
+(\cite[Cor.~3.2]{bct}), they are in bijection with the acyclic orientations
+of $G$ with unique source at $q$ (\cite[Thm.~3.1]{bct}), and their number is
+the Tutte evaluation $T_G(1,0)$ (\cite[Thm.~4.1]{bct}).
+
+\begin{definition}\label{def:canon}
+For $f \in \PF(G,q)$, the \emph{canonical burn order} $\sigma(f)$ is the
+sequence obtained by always burning the \emph{smallest} burnable vertex.
+By the abelian property $\sigma(f)$ is a well-defined ordering
+$(\sigma_0=q,\sigma_1,\dots,\sigma_{n-1})$ of $V$.
+\end{definition}
+
+For an arbitrary ordering $\sigma$ of $V$ starting at $q$ and $0\le k<n$
+write $w_k(v) = \sum_{j<k} a(v,\sigma_j)$ for the burnt-neighbor weight of
+$v$ before step $k$. Define, for $v=\sigma_k$,
+\[
+  \topp{\sigma}(v) = w_k(v) - 1,
+  \qquad
+  \bott{\sigma}(v) = \max\bigl(\{0\} \cup \{\, w_j(v) : j<k,\ \sigma_j > v \,\}\bigr).
+\]
+Since $w_\bullet(v)$ is nondecreasing, $\bott{\sigma}(v)$ is the
+burnt-neighbor weight of $v$ at the \emph{last} step that burned a larger
+vertex while $v$ was unburnt (its ``skip watermark''), and $0$ if there was
+no such step.
+
+\section{The fiber theorem}
+
+\begin{theorem}\label{thm:fiber}
+Let $f \in \PF(G,q)$ and $\sigma = \sigma(f)$. Then
+\[
+  \{\, g \in \PF(G,q) \;:\; \sigma(g) = \sigma \,\}
+  \;=\;
+  \{\, g \;:\; \bott{\sigma} \le g \le \topp{\sigma} \ \text{coordinatewise} \,\},
+\]
+and moreover every integer vector in the right-hand box is a $G$-parking
+function.
+\end{theorem}
+
+\begin{proof}
+($\subseteq$) Let $g\in\PF(G,q)$ with $\sigma(g)=\sigma$ and let
+$v=\sigma_k$. Since $v$ burns at step $k$ we have $g(v) < w_k(v)$, i.e.\
+$g(v)\le\topp{\sigma}(v)$. If $j<k$ and $\sigma_j > v$, then at step $j$ the
+canonical process preferred the larger vertex $\sigma_j$, so $v$ was not
+burnable: $g(v) \ge w_j(v)$. Taking the maximum over such $j$ gives
+$g(v)\ge\bott{\sigma}(v)$.
+
+($\supseteq$) Let $g$ be any integer vector with
+$\bott{\sigma}\le g\le\topp{\sigma}$. We show by induction on $k$ that the
+canonical process for $g$ burns $\sigma_1,\dots,\sigma_{k}$ in this order.
+Assume it has burnt exactly $\{\sigma_0,\dots,\sigma_{k-1}\}$, so each
+unburnt $v$ has burnt-neighbor weight $w_k(v)$. First, $v=\sigma_k$ is
+burnable: $g(v) \le \topp{\sigma}(v) = w_k(v)-1 < w_k(v)$. Second, let
+$u < \sigma_k$ be unburnt; then $u = \sigma_m$ for some $m > k$, so $u$ is
+skipped at step $k$ in $\sigma$, whence
+$\bott{\sigma}(u) \ge w_k(u)$ and therefore $g(u) \ge w_k(u)$: $u$ is not
+burnable. Hence the smallest burnable vertex is exactly $\sigma_k$. By
+induction the process burns all of $V$, so $g \in \PF(G,q)$ and
+$\sigma(g)=\sigma$.
+\end{proof}
+
+\begin{corollary}\label{cor:partition}
+The boxes $B_\sigma := [\bott{\sigma},\topp{\sigma}]$, over the canonical burn
+orders $\sigma$ of parking functions, partition $\PF(G,q)$. The map
+$\sigma \mapsto \topp{\sigma}$ is a bijection onto the set of maximal
+$G$-parking functions; in particular the number of boxes is $T_G(1,0)$.
+\end{corollary}
+
+\begin{proof}
+The fibers of $f \mapsto \sigma(f)$ partition $\PF(G,q)$, and by
+Theorem~\ref{thm:fiber} each fiber is a box. Every edge of $G$ contributes
+its multiplicity to $w_k(\sigma_k)$ exactly once, at the step burning its
+later endpoint, so
+$\sum_v \topp{\sigma}(v) = |E| - (n-1) = g$; hence each top is a maximal
+parking function \cite[Prop.~2.3, Cor.~3.2]{bct}. The top lies in its own
+box, so $\sigma(\topp{\sigma})=\sigma$ and $\sigma\mapsto\topp{\sigma}$ is
+injective. If $m$ is maximal then $m \in B_{\sigma(m)}$, so
+$m \le \topp{\sigma(m)}$; both have degree $g$, forcing
+$m=\topp{\sigma(m)}$. The count is \cite[Thm.~4.1]{bct}.
+\end{proof}
+
+\begin{corollary}[sign-free Tutte formulas]\label{cor:tutte}
+Writing $[k]_y = 1+y+\dots+y^{k-1}$ and $b_m := \bott{\sigma(m)}$ for a
+maximal parking function $m$,
+\[
+  T_G(1,y) \;=\; \sum_{m \text{ maximal}} \ \prod_{v \ne q}
+      \bigl[\, m(v) - b_m(v) + 1 \,\bigr]_y ,
+  \qquad
+  T_G(1,1) \;=\; \sum_{m} \prod_{v\ne q} \bigl(m(v)-b_m(v)+1\bigr).
+\]
+\end{corollary}
+
+\begin{proof}
+By Merino's theorem \cite{merino97}, $T_G(1,y)=\sum_{f\in\PF(G,q)}
+y^{\,g-\deg f}$. Group the sum by the boxes of
+Corollary~\ref{cor:partition}: within $B_\sigma$, the complement
+$\topp{\sigma}(v)-f(v)$ ranges independently over
+$\{0,\dots,\topp{\sigma}(v)-\bott{\sigma}(v)\}$.
+\end{proof}
+
+Via \cite[Thm.~3.1]{bct} the index set is the set of acyclic orientations
+with unique source at $q$, and $m(v)+1$ is the weighted in-degree of $v$;
+the watermark $b_m$ is a statistic on such orientations that appears to be
+new. Corollary~\ref{cor:tutte} replaces the $2^k$-term inclusion--exclusion
+of \cite[Cor.~3.3]{bct} with a sum of $T_G(1,0)$ positive terms.
+
+\begin{proposition}[the identity cell]\label{prop:identity}
+Suppose the vertex labeling is such that every prefix
+$\{0,1,\dots,k\}$ induces a connected subgraph. Then the identity ordering
+$\iota=(0,1,\dots,n-1)$ is a canonical burn order, $\bott{\iota}\equiv 0$, and
+$\topp{\iota}(v)=\bigl(\sum_{u<v}a(v,u)\bigr)-1$. For the hypercube $Q_n$
+with its binary labeling, $\topp{\iota}(v)=\mathrm{wt}(v)-1$ is the
+canonical parking function of \cite[Thm.~5.2]{bct} and the cell $B_\iota$ is
+its entire lower box, of cardinality $\prod_{v\neq 0}\mathrm{wt}(v)
+= \prod_{k=2}^n k^{\binom nk}$.
+\end{proposition}
+
+\begin{proof}
+Burning in increasing label order never skips a smaller unburnt vertex, so
+no watermark is ever raised and each step is legal because $v$ has a burnt
+(smaller) neighbor by the prefix-connectivity assumption. In $Q_n$ the
+smaller neighbors of $v$ are exactly the $\mathrm{wt}(v)$ vertices obtained
+by clearing one bit.
+\end{proof}
+
+\begin{conjecture}[$M$-shelling]\label{conj:shelling}
+In the lexicographic order of the canonical burn orders, every initial union
+of boxes of Corollary~\ref{cor:partition} is an order ideal; that is, the
+partition together with this order is an $M$-shelling in the sense of Chari
+\cite{chari}.
+\end{conjecture}
+
+Conjecture~\ref{conj:shelling} has been verified exhaustively for $Q_2$,
+$Q_3$, a $4$-vertex multigraph, and $25$ pseudorandom connected multigraphs
+on up to $6$ vertices. The \emph{existence} of an $M$-shelling of this
+multicomplex is a theorem of Merino \cite[Thm.~5.8]{merino01}, proved by
+induction on parallel classes; the construction above is explicit and
+appears to be the first closed-form one (a sweep of the citation trails of
+\cite{merino01,chari}, of the Gr\"obner-theoretic parking-function
+literature, and of the sandpile literature through 2026 found no interval
+partition of $\PF(G,q)$ for general $G$). Two pieces of prior art deserve
+emphasis: for complete graphs, the fibers of the outcome map of classical
+parking functions are known to be boxes with a product formula
+\cite[Prop.~3.3]{colmenarejo} --- Theorem~\ref{thm:fiber} specializes to
+this; and the greedy-burning engine underlying $\sigma(f)$ is the same one
+Cori and Le~Borgne used for their activity-preserving bijection to spanning
+trees \cite{corilb}, of which the present partition can be regarded as the
+fiber-level strengthening. On the algorithmic side, the search tree of
+Theorem~\ref{thm:fiber} enumerates the maximal parking functions of $G$
+(equivalently, by \cite[Thm.~3.1]{bct}, the acyclic orientations with unique
+fixed source) one per leaf with no duplicate suppression; we are not aware
+of a published enumeration algorithm stated for maximal parking functions.
+
+\section{The support-product conjecture for $Q_n$}
+
+Write $Q_n = Q_{n-1} \times K_2$ and fix the direction $d=n$ (all directions
+are equivalent). A spanning tree $T$ of $Q_n$ contains, for each
+$u \in V(Q_{n-1})$, at most one \emph{vertical} edge
+$\{(u,0),(u,1)\}$; let $S(T) \subseteq V(Q_{n-1})$ be the set of $u$ for
+which it does. For $S \subseteq V(Q_{n-1})$ let $F_{Q_{n-1}}(S)$ denote the
+number of spanning forests of $Q_{n-1}$ with exactly $|S|$ components, one
+containing each vertex of $S$ (equivalently, by the all-minors Matrix-Tree
+theorem, the determinant of the Laplacian of $Q_{n-1}$ with the rows and
+columns of $S$ deleted).
+
+\begin{theorem}[support product]\label{conj:support}
+Let $G$ be any connected graph with $M$ vertices and $c(G)$ spanning trees.
+For every nonempty $S \subseteq V(G)$, the number of spanning trees of
+$G \times K_2$ with vertical support exactly $S$ is
+$\tfrac{1}{2}\,c(G)\, 2^{|S|} F_G(S)$. In particular, for $G = Q_{n-1}$ the
+number of pairs $(T,r)$ with $T$ a spanning tree of $Q_n$, $r$ a root, and
+$S(T)=S$ equals
+\[
+  N(S) \;=\; 2^{\,|S|}\cdot F_{Q_{n-1}}(S)\cdot 2^{\,n-1} c(Q_{n-1}).
+\]
+\end{theorem}
+
+\begin{proof}
+Give the vertical edge at $u$ the weight $z_u$ and every horizontal edge
+weight $1$, and let $t(z) = \sum_T \prod_{u \in S(T)} z_u$ be the weighted
+spanning-tree sum of $G\times K_2$. Order the vertices as two level-blocks;
+the weighted Laplacian is
+$\bigl(\begin{smallmatrix} L_G + Z & -Z \\ -Z & L_G + Z\end{smallmatrix}\bigr)$
+with $Z = \operatorname{diag}(z_u)$. Conjugating by the orthogonal
+level-swap basis $\frac{1}{\sqrt 2}\bigl(\begin{smallmatrix} I & I \\ I &
+-I \end{smallmatrix}\bigr)$ block-diagonalizes it as $L_G \oplus (L_G+2Z)$.
+The product of the nonzero Laplacian eigenvalues of a weighted graph on $N$
+vertices equals $N$ times its tree sum; the zero eigenvalue lives in the
+$L_G$ block, so with $N = 2M$,
+\[
+  t(z) \;=\; \frac{1}{2M}\Bigl(\prod_{\lambda \neq 0}\lambda(L_G)\Bigr)
+             \det(L_G + 2Z)
+        \;=\; \frac{c(G)}{2}\,\det(L_G + 2Z).
+\]
+Expanding the determinant by principal minors in the diagonal perturbation
+$2Z$ and applying the all-minors Matrix-Tree theorem,
+$\det(L_G+2Z) = \sum_{R} 2^{|R|} F_G(R) \prod_{u\in R} z_u$. Both sides of
+$t(z)$ are multilinear in the $z_u$, and comparing the coefficient of
+$\prod_{u\in S} z_u$ gives the claim; multiplying by the $2M = 2^n$ root
+choices gives the hypercube form.
+\end{proof}
+
+\begin{proposition}[full-support slice, bijectively]\label{prop:fullsupport}
+For $S = V(G)$ the theorem has an explicit bijection: a spanning tree of
+$G\times K_2$ containing every vertical edge is exactly a choice of a
+spanning tree of $G$ (its image under contracting all vertical edges)
+together with a free level in $\{0,1\}$ for each of its $M-1$ edges; hence
+there are $c(G)\,2^{M-1} = \tfrac12 c(G) 2^{|S|} F_G(S)$ of them, as
+$F_G(V(G))=1$.
+\end{proposition}
+
+\begin{remark}[partial doubles]\label{rem:partialdouble}
+For general $S$, contracting the vertical edges of a tree with support $S$
+gives a bijection with the spanning trees of the \emph{partial double}
+$G^{(S)}$: the graph obtained from $G$ by splitting every vertex $u \notin
+S$ into two copies $u_0, u_1$ (an edge $(u,v)$ becomes two parallel edges if
+$u,v\in S$; the pair $(u,v_0),(u,v_1)$ if only $u \in S$; and
+$(u_0,v_0),(u_1,v_1)$ if $u,v\notin S$). Theorem~\ref{conj:support} is thus
+equivalent to the identity $c(G^{(S)}) = \tfrac12 c(G) 2^{|S|} F_G(S)$, and
+the remaining \emph{bijective} problem is to realize this identity by an
+explicit map --- for instance by splitting one vertex at a time.
+\end{remark}
+
+\begin{corollary}\label{prop:telescope}
+Stanley's formula
+$c(Q_n) = 2^{2^n-n-1}\prod_{k=1}^n k^{\binom nk}$ follows by iterating
+Theorem~\ref{conj:support} over the $n$ directions.
+\end{corollary}
+
+\begin{proof}
+Summing over $S$ and using
+$\sum_{S} z^{|S|} F_G(S) = \det(zI + L_G)$ (all-minors Matrix-Tree; the
+$S=\varnothing$ term vanishes) at $z=2$,
+\[
+  2^n c(Q_n) \;=\; \sum_{S\neq\varnothing} N(S)
+  \;=\; 2^{n-1}c(Q_{n-1}) \cdot \det\bigl(2I + L_{Q_{n-1}}\bigr)
+  \;=\; 2^{n-1}c(Q_{n-1}) \prod_{k=0}^{n-1} (2k+2)^{\binom{n-1}{k}} .
+\]
+Writing $R_n := 2^n c(Q_n)$, this is
+$R_n = R_{n-1} \prod_{j=1}^{n} (2j)^{\binom{n-1}{j-1}}$, and by induction
+with Pascal's rule $\binom{n-1}{j}+\binom{n-1}{j-1}=\binom nj$ one obtains
+$R_n = \prod_{j=1}^n (2j)^{\binom nj}$, which is Stanley's formula.
+\end{proof}
+
+Theorem~\ref{conj:support} was found experimentally and confirmed
+\emph{exactly, class by class}, for $n=2$, for $n=3$ (all $15$ supports),
+and for $n=4$ (all $255$ supports, from the complete set of
+$679\,477\,248$ spanning-tree--root pairs) before the proof above was
+identified; the identity is elementary by weighted Matrix-Tree arguments,
+and closely related product-graph computations appear in
+\cite{bernardi} and in Martin--Reiner, so we regard the \emph{statement} as
+possibly folklore --- the content for this project is its bijective
+realization. Two supporting facts, verified
+computationally: (i) conditioned on $S$, the spins of the vertical edges
+(the side of each vertical edge nearer the root) are \emph{exactly} jointly
+uniform over $\{0,1\}^S$ for the ensemble of (tree, root) pairs --- this is
+a transported and marginalized form of Bernardi's independence theorem
+\cite[Thm.~1]{bernardi}, and accounts for the factor $2^{|S|}$; (ii) the
+uniformity fails for trees with a fixed root, so any bijective realization
+must work with rooted-anywhere trees and only afterwards quotient by the
+$2^n$ root choices.
+
+A bijective proof of Theorem~\ref{conj:support} would amount to a
+bijection
+\[
+  \{(T,r) : S(T)=S\} \;\longleftrightarrow\;
+  \{0,1\}^S \times \mathcal F_{Q_{n-1}}(S) \times
+  \{\text{rooted spanning trees of } Q_{n-1}\},
+\]
+and, by Proposition~\ref{prop:telescope}, its iteration over $n$ would
+constitute a fully bijective proof of Stanley's formula --- the problem
+stated as open in \cite[Example 5.6.10]{ec2} and, for the bijective form,
+still open after \cite{bernardi} (cf.\ the Notes to Chapter~5 of the second
+edition of \cite{ec2}).
+
+A structural reformulation: deleting the vertical edges of $T$ leaves
+forests $H_0, H_1$ in the two levels, and $T$ is a tree if and only if the
+bipartite ``component graph'' on the components of $H_0$ and $H_1$, with one
+edge per element of $S$, is a tree. Conjecture~\ref{conj:support} asserts
+that these glued structures are equinumerous with the product above; finding
+the gluing bijection is the core remaining problem.
+
+\section{Computational appendix}
+
+All computations were performed with \texttt{qpark} (Rust, in this
+repository): exact enumeration of maximal parking functions via canonical
+burn orders with the skip-watermark pruning of Theorem~\ref{thm:fiber}
+($Q_4$: $3\,040\,575$ maximal parking functions and $42\,467\,328$ spanning
+trees in $1.5$s, matching the chromatic polynomial of $Q_4$, the Matrix-Tree
+determinant, and Stanley's formula); the degree enumerator
+$T_{Q_4}(1,y)$; Smith normal forms of the reduced Laplacians, giving
+$K(Q_5)=\ZZ_2^5\times\ZZ_6\times\ZZ_{24}^4\times\ZZ_{48}\times
+\ZZ_{192}^3\times\ZZ_{960}$ in agreement with all three theorems of Bai
+\cite{bai}; and the census and spin experiments described above. Validation
+is by exhaustive comparison against brute-force Dhar enumeration on small
+and random multigraphs.
+
+\begin{thebibliography}{9}
+\bibitem{bai} H.~Bai, \emph{On the critical group of the $n$-cube}, Linear
+Algebra Appl.\ 369 (2003) 251--261.
+\bibitem{bct} B.~Benson, D.~Chakrabarty, P.~Tetali, \emph{$G$-parking
+functions, acyclic orientations and spanning trees}, Discrete Math.\ 310
+(2010) 1340--1353.
+\bibitem{bernardi} O.~Bernardi, \emph{On the spanning trees of the hypercube
+and other products of graphs}, Electron.\ J.\ Combin.\ 19(4) (2012), \#P51.
+\bibitem{chari} M.~K.~Chari, \emph{Two decompositions in topological
+combinatorics with applications to matroid complexes}, Trans.\ Amer.\ Math.\
+Soc.\ 349 (1997) 3925--3943.
+\bibitem{colmenarejo} L.~Colmenarejo, P.~E.~Harris, Z.~Jones, C.~Keller,
+A.~Ramos Rodr\'iguez, E.~Sukarto, A.~R.~Vindas-Mel\'endez, \emph{Counting
+$k$-Naples parking functions through permutations and the $k$-Naples area
+statistic}, Enumer.\ Comb.\ Appl.\ 1(2) (2021), S2R11.
+\bibitem{corilb} R.~Cori, Y.~Le~Borgne, \emph{The sand-pile model and Tutte
+polynomials}, Adv.\ Appl.\ Math.\ 30 (2003) 44--52.
+\bibitem{dhar} D.~Dhar, \emph{Self-organized critical state of sandpile
+automaton models}, Phys.\ Rev.\ Lett.\ 64 (1990) 1613--1616.
+\bibitem{ec2} R.~P.~Stanley, \emph{Enumerative Combinatorics, Volume 2},
+Cambridge Univ.\ Press, 1999; 2nd ed.\ 2024, Example 5.6.10.
+\bibitem{merino97} C.~Merino L\'opez, \emph{Chip firing and the Tutte
+polynomial}, Ann.\ Comb.\ 1 (1997) 253--259.
+\bibitem{merino01} C.~Merino, \emph{The chip firing game and matroid
+complexes}, Discrete Math.\ Theor.\ Comput.\ Sci.\ Proc.\ AA (2001)
+245--256.
+\end{thebibliography}
+
+\end{document}

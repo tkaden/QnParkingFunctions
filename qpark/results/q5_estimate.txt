@@ -1,0 +1,6 @@
+samples               : 200000000
+maximal PFs (est)     : 7.3741e16  +- 5.0e15  (rel err 6.71%)
+  reference (chromatic): 8.1769e16  -> estimate off by -1.62 standard errors
+spanning trees (est)  : 7.1148e18  +- 8.1e17  (rel err 11.37%)
+  reference (Stanley)  : 2.0776e19  -> estimate off by -16.89 standard errors
+elapsed               : 650.40s

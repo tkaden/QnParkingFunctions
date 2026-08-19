@@ -1,0 +1,287 @@
+\documentclass[11pt]{amsart}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[margin=1.2in]{geometry}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{problem}[theorem]{Problem}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{observation}[theorem]{Observation}
+
+\newcommand{\ZZ}{\mathbb{Z}}
+
+% TODO(Tyler): author list is a placeholder; add coauthors as appropriate.
+
+\title[Vertical supports and the hypercube tree formula]{Spanning trees of
+$G\times K_2$ by vertical support, partial doubles,\\ and the bijective
+program for the hypercube tree formula}
+\author{Tyler Aden}
+\date{Draft of August 19, 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+For a connected graph $G$, we count the spanning trees of the prism
+$G\times K_2$ by their \emph{vertical support} --- the set $S$ of vertices
+of $G$ whose vertical edge is used: the count is
+$\tfrac12\,c(G)\,2^{|S|}F_G(S)$, where $c(G)$ is the number of spanning
+trees and $F_G(S)$ the number of $S$-rooted spanning forests of $G$.
+Iterating this identity over the $n$ directions of the hypercube
+$Q_n = Q_{n-1}\times K_2$ telescopes, through Pascal's rule, to Stanley's
+product formula $c(Q_n)=2^{2^n-n-1}\prod_k k^{\binom nk}$, giving an
+elementary inductive derivation of that formula and, more importantly,
+reducing the problem of a fully bijective proof --- open since
+\cite[Example~5.6.10]{ec2}, and still open in bijective form after
+Bernardi's combinatorial proofs \cite{bernardi} --- to a single per-level
+bijective step. We prove the full-support slice of that step by an explicit
+bijection, reformulate the general slice as a spanning-tree identity for
+\emph{partial doubles} of $G$, report an exactly verified spin-uniformity
+phenomenon (Bernardi's independence holds exactly for rooted-anywhere trees
+and provably fails for root-fixed ones), and record the experimental
+fine structure of the remaining step at the level of level-projections,
+including where its naive product law breaks.
+\end{abstract}
+
+\section{Background}
+
+Stanley's \emph{Enumerative Combinatorics} vol.~2 derives
+\begin{equation}\label{eq:stanley}
+  c(Q_n) \;=\; 2^{2^n-n-1}\prod_{k=1}^{n} k^{\binom nk}
+\end{equation}
+from the Laplacian eigenvalues of $Q_n$ and remarks (1st ed., p.~62,
+closing Example~5.6.10) that ``a direct combinatorial proof of this formula
+is not known.'' Bernardi \cite{bernardi} gave two combinatorial proofs ---
+one via an independence property of edge-direction ``spins'' in uniformly
+random rooted forests, one via killing involutions --- and the second
+edition of \cite{ec2} (2024, Notes to Ch.~5) updates the remark: a
+\emph{bijective} proof is not known. This paper organizes a route to one.
+
+Throughout, $G$ is a connected graph on $M$ vertices (for
+\eqref{eq:stanley}, $G = Q_{n-1}$ and $M = 2^{n-1}$), and
+$G\times K_2$ is the prism over $G$: two copies $G\times\{0\}$,
+$G\times\{1\}$ (\emph{horizontal} edges) plus a \emph{vertical} edge
+$\{(u,0),(u,1)\}$ for each $u\in V(G)$. For a spanning tree $T$ of
+$G\times K_2$, let $S(T)\subseteq V(G)$ be its vertical support. For
+$S \subseteq V(G)$, let $F_G(S)$ denote the number of spanning forests of
+$G$ with exactly $|S|$ components, each containing one vertex of $S$; by
+the all-minors Matrix-Tree theorem $F_G(S) = \det L_G[\bar S]$, the minor
+of the Laplacian with the rows and columns of $S$ removed.
+
+\section{The support-product theorem}
+
+\begin{theorem}\label{thm:support}
+For every nonempty $S\subseteq V(G)$, the number of spanning trees $T$ of
+$G\times K_2$ with $S(T)=S$ is
+\[
+  N_G(S) \;=\; \tfrac12\, c(G)\; 2^{|S|}\, F_G(S).
+\]
+\end{theorem}
+
+\begin{proof}
+Weight the vertical edge at $u$ by an indeterminate $z_u$ and every
+horizontal edge by $1$, and let $t(z)=\sum_T\prod_{u\in S(T)}z_u$ be the
+weighted spanning-tree sum. With vertices ordered level by level, the
+weighted Laplacian is
+$\left(\begin{smallmatrix} L_G+Z & -Z\\ -Z & L_G+Z \end{smallmatrix}\right)$,
+$Z=\operatorname{diag}(z_u)$, which the orthogonal level-swap basis
+$\tfrac1{\sqrt2}\left(\begin{smallmatrix} I & I\\ I & -I
+\end{smallmatrix}\right)$ block-diagonalizes as $L_G\oplus(L_G+2Z)$. For a
+weighted graph on $N$ vertices the product of the nonzero Laplacian
+eigenvalues is $N$ times the tree sum, and the kernel lies in the $L_G$
+block; with $N = 2M$,
+\[
+  t(z) \;=\; \frac{1}{2M}\,\Bigl(\;\prod_{\lambda\ne0}\lambda(L_G)\Bigr)
+  \det(L_G+2Z)
+  \;=\; \frac{c(G)}{2}\,\det(L_G+2Z).
+\]
+Expanding by principal minors in the diagonal matrix $2Z$ and applying the
+all-minors Matrix-Tree theorem,
+$\det(L_G+2Z)=\sum_{R}2^{|R|}F_G(R)\prod_{u\in R}z_u$. Both sides are
+multilinear in the $z_u$; compare coefficients of $\prod_{u\in S}z_u$.
+\end{proof}
+
+\begin{remark}
+The identity is elementary and product-graph Matrix-Tree computations of
+this kind appear in Martin--Reiner \cite{mr} and Bernardi
+\cite[\S4]{bernardi}; we make no novelty claim for
+Theorem~\ref{thm:support} itself. Its role here is architectural: it is the
+exact statement whose bijective realization would prove
+\eqref{eq:stanley} bijectively (Corollary~\ref{cor:telescope} and
+Problem~\ref{prob:main}). We first found it as an experimental identity:
+it was confirmed class-by-class for $Q_2,Q_3,Q_4$ ($3+15+255$ supports; the
+$Q_4$ case over all $679\,477\,248$ tree--root pairs) before the proof was
+written down.
+\end{remark}
+
+\begin{corollary}\label{cor:telescope}
+Iterating Theorem~\ref{thm:support} yields \eqref{eq:stanley}.
+\end{corollary}
+
+\begin{proof}
+Summing the theorem over all $S$ (the $S=\varnothing$ term vanishes) and
+using $\sum_R z^{|R|}F_G(R) = \det(zI+L_G)$ at $z=2$:
+\[
+  c(G\times K_2) \;=\; \tfrac12\,c(G)\,\det(2I+L_G).
+\]
+For $G=Q_{n-1}$, whose Laplacian eigenvalues are $2k$ with multiplicity
+$\binom{n-1}k$, $\det(2I+L)=\prod_{k=0}^{n-1}(2k+2)^{\binom{n-1}k}$.
+Writing $R_n=2^n c(Q_n)$, the recursion reads
+$R_n = R_{n-1}\prod_{j=1}^n(2j)^{\binom{n-1}{j-1}}$, and Pascal's rule
+gives $R_n=\prod_{j=1}^n(2j)^{\binom nj}$ by induction, which is
+\eqref{eq:stanley}.
+\end{proof}
+
+Of course, evaluating $\det(2I+L_{Q_{n-1}})$ spectrally re-uses linear
+algebra; combinatorially, $\det(2I+L_G) = \sum_S 2^{|S|}F_G(S)$ counts
+\emph{pairs} (an $S$-rooted spanning forest, a $\{0,1\}$-coloring of its
+roots), so the recursion has the set-level form
+\begin{equation}\label{eq:setform}
+\begin{gathered}
+  \{\text{spanning trees of } G\times K_2\}\ \times\ \{0,1\}\\
+  \longleftrightarrow\quad
+  \{\text{spanning trees of }G\}\ \times\
+  \{\text{root-$2$-colored rooted spanning forests of } G\},
+\end{gathered}
+\end{equation}
+and a bijective proof of \eqref{eq:stanley} needs exactly a constructive
+form of \eqref{eq:setform}, level by level.
+
+\section{Bijective fragments}
+
+\subsection{The full-support slice}
+
+\begin{proposition}\label{prop:full}
+A spanning tree of $G\times K_2$ containing every vertical edge is the same
+data as a spanning tree of $G$ together with a level in $\{0,1\}$ for each
+of its $M-1$ edges: contract the vertical edges to project, and lift each
+base tree edge to its recorded level to invert. Hence
+$N_G(V(G)) = c(G)\,2^{M-1}$, the $S=V(G)$ case of
+Theorem~\ref{thm:support}.
+\end{proposition}
+
+\subsection{Partial doubles}
+
+\begin{definition}
+For $S\subseteq V(G)$, the \emph{partial double} $G^{(S)}$ is the graph
+obtained from $G$ by splitting each $u\notin S$ into $u_0,u_1$: an edge
+$(u,v)$ of $G$ becomes two parallel edges when $u,v\in S$; the two edges
+$(u,v_0),(u,v_1)$ when $u\in S$, $v\notin S$; and $(u_0,v_0),(u_1,v_1)$
+when $u,v\notin S$.
+\end{definition}
+
+Contracting the vertical edges of a tree with support $S$ is a bijection
+onto the spanning trees of $G^{(S)}$, so Theorem~\ref{thm:support} is
+equivalent to
+\begin{equation}\label{eq:partial}
+  c\bigl(G^{(S)}\bigr) \;=\; \tfrac12\,c(G)\,2^{|S|}\,F_G(S).
+\end{equation}
+For $S=V(G)$ this is Proposition~\ref{prop:full} (all edges doubled); for
+$S=\varnothing$ both sides vanish on connectivity grounds. Splitting one
+vertex at a time interpolates between $G^{(V)}$ and $G^{(S)}$ and is a
+natural inductive route to a bijection, though the ratio
+$F_G(S)/F_G(S\cup u)$ is not local, so the induction must carry more
+structure than a single count.
+
+\subsection{What the spins do and do not give}
+
+Bernardi's independence theorem \cite[Thm.~1]{bernardi} concerns uniformly
+random rooted forests conditioned on their projection; transported to
+spanning trees it says the \emph{spins} (for each $u\in S$, the level of
+the endpoint of the vertical edge at $u$ nearer the root) should be free
+bits. We verified computationally: for the ensemble of (tree, root) pairs
+of $Q_3$, conditioned on the direction and the support $S$, the joint
+distribution of the spins is \emph{exactly} uniform on $\{0,1\}^S$ (all
+$45$ conditioned classes, zero discrepancy), and remains consistent with
+uniform on samples of $2\times10^6$ ($Q_4$) and $10^6$ ($Q_5$) uniform
+trees. For trees with a \emph{fixed} root the uniformity provably fails
+(e.g.\ $\chi^2=330.7$ on $65$ dof already for $Q_3$). Thus the factor
+$2^{|S|}$ of Theorem~\ref{thm:support} is realized by free bits only in the
+rooted-anywhere ensemble; any bijection must fix the root only after the
+bits are extracted. This matches the shape of \eqref{eq:setform}, which is
+stated for a $2$-fold cover of the tree set rather than for rooted trees.
+
+\section{Fine structure of the remaining step}\label{sec:fine}
+
+Deleting (rather than contracting) the vertical edges of a tree $T$ with
+support $S$ leaves horizontal forests $H_0, H_1$ in the two levels;
+projecting both to $G$ gives an edge multiset $U$ with multiplicities in
+$\{1,2\}$, where a multiplicity-$1$ edge remembers a free level choice and
+a multiplicity-$2$ edge uses both levels. Vertex and edge counts show that
+$T$ is a tree if and only if the chosen level-lift of $(S,U)$ is connected.
+Exhaustively on $Q_3$ (base $Q_2$):
+
+\begin{itemize}
+\item every occurring $U$ decomposes as (spanning tree of the base)
+$\uplus$ ($S$-rooted spanning forest of the base) --- the edge budgets
+match Theorem~\ref{thm:support} exactly --- and conversely every
+decomposable $(S,U)$ occurs;
+\item with $m$ the number of multiplicity-$1$ edges and $d$ the number of
+decompositions, every class satisfies the \emph{mass formula}
+$N(S,U)\cdot d = 2^m$ (the classes split as $d=1$ with all $2^m$ lifts
+connected, and $d=2$ with exactly half).
+\end{itemize}
+
+On $Q_4$ (base $Q_3$; all $42\,467\,328$ trees, $2\,459\,160$ classes) the
+mass formula holds in $95.7\%$ of classes; but the full data reveals a
+\emph{universal law} subsuming it. In every class of $Q_3$ and of $Q_4$
+without exception,
+\begin{equation}\label{eq:universal}
+  N(S,U) \;=\; d(S,U)\cdot 2^{\,m-2s}
+  \qquad\text{for some integer } s = s(S,U) \ge 0
+\end{equation}
+(observed $s \le 5$ on $Q_4$): the connected level-lifts distribute over
+the $d$ decompositions of $U$ in equal shares whose codimension in
+$\mathbb{F}_2^{\,m}$ is always \emph{even}. The mass formula is the special
+case $d = 2^s$. Probing the geometry: in a sample of $40$ exceptional
+classes, the set $V \subseteq \mathbb{F}_2^m$ of connected lifts was, in
+$22$ cases, exactly a union of $d$ cosets of its stabilizer subspace
+$W=\{x : V\oplus x = V\}$ with $\dim W = m-2s$; in the remaining $18$, $V$
+is a union of fewer, larger cosets with the decompositions clustering in
+groups of $4$ per coset. We conjecture \eqref{eq:universal} for all
+connected base graphs, and identifying the invariant $s(S,U)$ together with
+a canonical assignment of lifts to decompositions is, in our view, the
+combinatorial heart of \eqref{eq:setform}.
+
+\section{Open problems}
+
+\begin{problem}\label{prob:main}
+Construct an explicit bijection realizing \eqref{eq:setform} ---
+equivalently \eqref{eq:partial} for all $S$ --- for $G = Q_{n-1}$, or for
+arbitrary connected $G$. By Corollary~\ref{cor:telescope} this yields a
+bijective proof of \eqref{eq:stanley}, resolving the bijective form of the
+question of \cite[Example~5.6.10]{ec2}.
+\end{problem}
+
+\begin{problem}
+Prove the universal law \eqref{eq:universal} and identify the invariant
+$s(S,U)$; determine when the connected lifts form exactly $d$ cosets of a
+subspace of dimension $m-2s$, and construct the canonical assignment of
+lifts to decompositions in general.
+\end{problem}
+
+\begin{problem}
+Make Bernardi's spin-flip independence constructive on rooted-anywhere
+trees (his proof is an induction through vertex deletions and arc
+mergings), and determine its interaction with the contraction map of
+Proposition~\ref{prop:full}.
+\end{problem}
+
+\begin{thebibliography}{9}
+\bibitem{bernardi} O.~Bernardi, \emph{On the spanning trees of the
+hypercube and other products of graphs}, Electron.\ J.\ Combin.\ 19(4)
+(2012), \#P51.
+\bibitem{ec2} R.~P.~Stanley, \emph{Enumerative Combinatorics, Volume 2},
+Cambridge Univ.\ Press, 1999; 2nd ed.\ 2024.
+\bibitem{mr} J.~L.~Martin, V.~Reiner, \emph{Factorization of some weighted
+spanning tree enumerators}, J.\ Combin.\ Theory Ser.~A 104 (2003) 287--300.
+\end{thebibliography}
+
+\end{document}

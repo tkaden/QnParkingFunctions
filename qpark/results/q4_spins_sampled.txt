@@ -1,0 +1,12 @@
+2000000 Wilson-sampled uniform spanning trees (one random re-rooting each)
+vertical-edge spins, trees ROOTED AT 0 (via BCT pi):
+  direction 0: 255 support-classes, 0 EXACTLY uniform; total chi2 = 1392102.9 on 6305 dof (worst class chi2 11851.0 at S=0b1010000000001)
+  direction 1: 255 support-classes, 0 EXACTLY uniform; total chi2 = 1391417.9 on 6305 dof (worst class chi2 11788.9 at S=0b1000100001)
+  direction 2: 255 support-classes, 0 EXACTLY uniform; total chi2 = 1390655.2 on 6305 dof (worst class chi2 11764.3 at S=0b100000000001)
+  direction 3: 255 support-classes, 0 EXACTLY uniform; total chi2 = 1392453.2 on 6305 dof (worst class chi2 11896.0 at S=0b1001001)
+vertical-edge spins, same trees re-rooted at ALL vertices:
+  direction 0: 255 support-classes, 0 EXACTLY uniform; total chi2 = 6276.7 on 6305 dof (worst class chi2 230.5 at S=0b101010101010101)
+  direction 1: 255 support-classes, 0 EXACTLY uniform; total chi2 = 6387.5 on 6305 dof (worst class chi2 227.5 at S=0b11001100110011)
+  direction 2: 255 support-classes, 0 EXACTLY uniform; total chi2 = 6258.5 on 6305 dof (worst class chi2 243.5 at S=0b111100001111)
+  direction 3: 255 support-classes, 0 EXACTLY uniform; total chi2 = 6485.2 on 6305 dof (worst class chi2 278.3 at S=0b11111111)
+elapsed: 5.25s

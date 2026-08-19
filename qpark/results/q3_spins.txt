@@ -1,0 +1,10 @@
+exhaustive: 384 parking functions -> trees via BCT pi
+vertical-edge spins, trees ROOTED AT 0 (via BCT pi):
+  direction 0: 15 support-classes, 0 EXACTLY uniform; total chi2 = 330.7 on 65 dof (worst class chi2 32.0 at S=0b1000101)
+  direction 1: 15 support-classes, 0 EXACTLY uniform; total chi2 = 330.7 on 65 dof (worst class chi2 32.0 at S=0b10011)
+  direction 2: 15 support-classes, 0 EXACTLY uniform; total chi2 = 330.7 on 65 dof (worst class chi2 32.0 at S=0b111)
+vertical-edge spins, same trees re-rooted at ALL vertices:
+  direction 0: 15 support-classes, 15 EXACTLY uniform; total chi2 = 0.0 on 65 dof (worst class chi2 0.0 at S=0b0)
+  direction 1: 15 support-classes, 15 EXACTLY uniform; total chi2 = 0.0 on 65 dof (worst class chi2 0.0 at S=0b0)
+  direction 2: 15 support-classes, 15 EXACTLY uniform; total chi2 = 0.0 on 65 dof (worst class chi2 0.0 at S=0b0)
+elapsed: 2.68ms

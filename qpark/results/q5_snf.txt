@@ -1,0 +1,8 @@
+== sandpile group (Smith normal form of reduced Laplacian) ==
+invariant factors     : [2, 2, 2, 2, 2, 6, 24, 24, 24, 24, 48, 192, 192, 192, 960]
+group structure       : Z_2 x Z_2 x Z_2 x Z_2 x Z_2 x Z_6 x Z_24 x Z_24 x Z_24 x Z_24 x Z_48 x Z_192 x Z_192 x Z_192 x Z_960
+group order           : 20776019874734407680 [ok]
+2-rank (even factors) : 15
+maximal PF class check: skipped (too many to enumerate)
+elapsed: 880.97µs
+

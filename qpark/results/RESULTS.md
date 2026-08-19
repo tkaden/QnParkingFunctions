@@ -38,7 +38,166 @@ maximal parking functions map to pairwise distinct group classes (verified at
 the full 3 M scale for Q4) — consistent with superstables being coset
 representatives.
 
-## The canonical box partition (new object)
+## Q5: what is and isn't reachable
+
+Direct enumeration is out by ~7 orders of magnitude (8.2 × 10^16 leaves at the
+measured ~2M leaves/s ≈ 1,300 years). Two things are exact or statistically
+checkable:
+
+- **K(Q5) = Z2^5 × Z6 × Z24^4 × Z48 × Z192^3 × Z960** (SNF of the 31×31
+  reduced Laplacian, < 1 ms; `q5_snf.txt`). Consistency with Bai (2003):
+  order = c(Q5) exactly; 15 invariant factors (Thm 1.1: 2^{n−1} − 1); six Z2's
+  in elementary-divisor form (Thm 1.3: a_5 = 2^3 − 2^1 = 6); odd part
+  Z3^10 × Z5 (Thm 1.2). The full Sylow-2 is Z2^6 × Z8^4 × Z16 × Z64^4 — the
+  2-part is open in general (Gao–Marx-Kuo–McDonald–Yuen 2024 give only the
+  largest n−1 factors), so this explicit n = 5 value is a useful data point.
+- **Knuth random-descent estimator** (`qpark estimate`): unbiased leaf-count
+  and box-volume-total estimates from random root-to-leaf walks. Validated on
+  Q3/Q4 (within ~1.5 standard errors of truth). Q5 at 200M samples:
+  maximal-PF estimate 7.37e16 ± 0.50e16 vs the chromatic-polynomial value
+  8.1769e16 (−1.6σ, consistent — the first check on that number outside
+  chromatic-polynomial computations). CAVEAT: the tree-side estimate came out
+  17σ below the exactly-known tree count, exposing the estimator's heavy-tail
+  undercoverage; the leaf estimate is order-of-magnitude reliable but likely
+  also biased somewhat low. Publication-grade verification would need
+  importance sampling.
+
+## The spin experiment (Direction 1) — a sharp positive/negative dichotomy
+
+Built: BCT Theorem 4.6 bijection pi/mu (validated: mu(pi(f)) = f for every
+parking function of Q2/Q3 and 12 random simple graphs; pi onto all spanning
+trees), Wilson's algorithm for exact uniform spanning trees, and a spin
+statistic tester (`qpark spins`).
+
+Candidate 0 (out-edge spins at weight-≥2 vertices): DEAD — the spin of a
+vertex's out-edge is a deterministic function of its direction (parentᵢ =
+1 − vᵢ), carrying no free bits. Killed by inspection of the Q3 table.
+
+Candidate 1 (Bernardi vertical-edge spins conditioned on vertical support,
+transported through pi): for trees ROOTED AT 0, decisively NON-uniform
+(Q3 exhaustive: chi2 = 330.7 on 65 dof per direction; Q4 2M samples:
+chi2 ≈ 1.39e6 on 6305 dof). But for the SAME trees with the root freed
+(uniform over all (tree, root) pairs): Q3 exhaustive — **exactly uniform,
+chi2 = 0.0, every spin-vector count identical in all 45 classes**; Q4 (2M
+samples) and Q5 (1M samples) — chi2 within ~1σ of dof in every direction.
+
+Interpretation: Bernardi's free Z2 bits are real and constructive, but they
+live exactly in the rooted-anywhere world; FIXING THE ROOT is precisely what
+breaks the product structure. Consistently, the clean formula is for rooted
+trees: 2^n · c(Q_n) = prod_{v≠0} (2·wgt(v)) — one (coordinate-in-support,
+bit) pair per non-root vertex. Bijective program, reformulated: build the
+bijection {rooted spanning trees} ↔ prod_{v≠0} (supp(v) × {0,1}) using
+Bernardi's rerouting involutions for the bit part, and only then quotient by
+the 2^n root choices to reach parking functions rooted at q. Files:
+`q3_spins.txt`, `q4_spins_sampled.txt`, `q5_spins_sampled.txt`.
+
+## The support-product THEOREM (upgraded from conjecture 2026-08-19)
+
+PROVEN, for any connected base graph G: #spanning trees of G x K_2 with
+vertical support exactly S = (1/2) c(G) 2^|S| F_G(S). Proof: weight
+verticals by z_u; the weighted Laplacian block-diagonalizes under the level
+swap into L_G and L_G + 2Z; the weighted tree sum is (c(G)/2) det(L_G+2Z);
+expand by principal minors + all-minors Matrix-Tree; compare multilinear
+coefficients. (Full proof in notes/box-partition-note.tex and
+papers/support-product-paper.tex.) The identity is elementary and possibly
+folklore (Martin-Reiner / Bernardi Sect. 4 territory); its role is
+architectural. Corollaries: (1) iterating over directions telescopes to
+Stanley's formula via Pascal; (2) equivalent form: c(G^(S)) =
+(1/2) c(G) 2^|S| F_G(S) for the PARTIAL DOUBLE G^(S) (split each vertex
+outside S into two copies) — contraction of verticals is the bijection to
+partial-double trees; (3) the FULL-SUPPORT slice has an explicit
+three-line bijection (contract verticals; free level bit per base tree
+edge). Remaining bijective gap, precisely: realize
+{trees of G x K2} x {0,1} <-> {trees of G} x {root-2-colored rooted
+forests of G} constructively (Problem 1 of the paper).
+
+## The support-product census (discovery data)
+
+Census (`qpark census`): counting (tree, root) pairs of Q_n by the set S of
+base vertices carrying a vertical (direction-d) tree edge gives, exactly:
+
+    count(S) = 2^|S| * F_base(S) * 2^(n-1) * c(Q_{n-1})
+
+where F_base(S) = number of S-rooted spanning forests of Q_{n-1} (Laplacian
+minor determinant). **Verified exactly, class by class, for n = 2 (3
+classes), n = 3 (15 classes), and n = 4 (all 255 classes, from the complete
+set of 679,477,248 (tree,root) pairs; 467 s)** — see `q4_census.txt`. Crucially, summing this identity over S via
+sum_S z^|S| F_G(S) = det(zI + L_G) at z = 2 **telescopes Stanley's formula
+exactly through Pascal's rule** (see notes/box-partition-note.tex,
+Prop. "telescope"). So a bijective proof of the census identity at each
+level n IS a bijective proof of the hypercube tree formula. This is the
+reformulated end goal.
+
+Progress on the mechanism (`scripts/projection_test.py`, Q3 exhaustive):
+deleting the vertical edges of a tree leaves horizontal forests in the two
+levels; projecting both to the base gives an edge multiset U (multiplicities
+1 = "free level choice", 2 = "both levels"). Findings: (i) every occurring U
+decomposes as (spanning tree of base) ⊎ (S-rooted forest of base) —
+132/132 classes, matching the conjecture's edge budget exactly, and
+conversely EVERY decomposable (S, U) occurs; (ii) on Q3 every class obeys
+the MASS FORMULA  N(S,U) * d(S,U) = 2^m  exactly (m = #multiplicity-1
+"free level" edges, d = #decompositions, N = #trees in the class; the
+classes split as d=1 with all 2^m lifts connected, and d=2 with exactly
+half). A tree with data (S,U) IS a connected level-assignment of U's free
+edges — vertex/edge counts make connected equivalent to tree automatically
+— so N counts connected lifts.
+
+Discrimination at n = 4 (`qpark project q4`, all 42.5M trees, 2 459 160
+(S,U) classes; `q4_projection.txt`, violators in `q4_violators.txt`): the
+mass formula holds in 95.7% of classes — but the exceptional 105 540
+classes revealed a UNIVERSAL LAW subsuming everything. In EVERY class of
+Q3 and Q4, without exception:
+
+    N(S,U) = d(S,U) * 2^(m - 2s)   for an integer s = s(S,U) >= 0
+
+(verified over all 105 540 exceptional classes, s in {2,3,4,5} there; the
+mass formula is the special case d = 2^s; the Q3 dichotomy is s in {0,1}).
+Equivalently odd(N) = odd(d) always, and the per-decomposition share of
+connected lifts always has EVEN codimension in F_2^m. Geometry probe (40
+exceptional classes): in 22, the connected-lift set V is exactly d cosets
+of its stabilizer subspace W = {x : V xor x = V} with dim W = m - 2s; in
+18, V is fewer larger cosets with decompositions clustering 4 per coset.
+Open: prove the universal law, identify s(S,U), and construct the canonical
+lift-to-decomposition assignment — that construction IS the per-level
+gluing of the bijective program. (The Wilson-sample heuristic "conformer
+iff d is a power of two" is nearly but not exactly right: 756 of the
+exceptional classes have d a power of two with N·d = 4·2^m.)
+
+## The canonical box partition
+
+**Novelty status (final, after a full citation sweep of Merino 2001 / Chari
+1997 / the Gröbner parking-function line / the sandpile literature through
+2026):** the general-G box partition appears NEW — no interval partition of
+parking functions, no burn-order fibers-as-intervals, no explicit witness
+for Merino's Thm 5.8 exists in the literature. Two prior-art anchors to
+cite: (1) for COMPLETE graphs the outcome-map fibers of classical parking
+functions are known boxes with a product formula (Colmenarejo–Harris et
+al., Enumer. Comb. Appl. 1 (2021), Prop. 3.3) — our theorem specializes to
+this; (2) Cori–Le Borgne 2003 use the same greedy-burning engine for their
+activity-preserving bijection — ours is its fiber-level strengthening. The
+Sept 2025 survey-adjacent paper arXiv:2509.11460 (Corry–Dochtermann et al.)
+poses even the weaker bijective goal as open (their Question 6.7). Also: no
+published algorithm is stated for enumerating maximal parking functions
+(poly-delay enumeration of single-source acyclic orientations exists —
+Conte–Grossi–Marino–Rizzi 2016/2018 — but the corollary was never drawn),
+so qpark's enumerator has standalone algorithmic value.
+
+**Earlier note (2026-08-19, after reading Merino 2001 in full):**
+the *existence* of an interval partition of the parking-function multicomplex
+with tops the maximal elements is known — C. Merino, "The Chip Firing Game and
+Matroid Complexes" (DMTCS Proc. AA, 2001), Theorem 5.8 proves the multicomplex
+is M-shellable (settling Chari's conjecture for cographic matroids). Merino's
+proof is *inductive* (deletion–contraction over parallel edge classes, gluing
+via i-joins) and produces no explicit rule. What is plausibly new here is the
+**explicit canonical construction**: the intervals are the fibers of the
+lex-minimal-Dhar-burn-order map, with closed-form tops (wcnt − 1) and bottoms
+(skip watermarks), indexed by acyclic orientations with unique sink, restricting
+to the BCT canonical box on the identity order, and computable at Q4 scale.
+Experimentally (Q3, the sample multigraph, 25 random multigraphs): the DFS
+emission order (lex order on burn sequences) makes the partition an
+**M-shelling**, not just an M-partition — every initial union of boxes is an
+order ideal. Conjecturally this holds for all connected multigraphs; a proof
+would give an explicit M-shelling where Merino's is recursive.
 
 The enumerator partitions all parking functions into boxes indexed by the
 maximal ones. For Q3 (see `q3_box_partition.txt`):

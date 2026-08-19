@@ -1,4 +1,5 @@
 mod analyze;
+mod bij;
 mod burn;
 mod dhar;
 mod exact;
@@ -76,6 +77,584 @@ fn cmd_count(g: &Graph, dim: Option<u32>) {
         println!("Stanley formula check : {} {}", stanley, ok(agg.trees == stanley));
     }
     println!("elapsed               : {dt:.2?}");
+}
+
+fn cmd_estimate(g: &Graph, dim: Option<u32>, samples: u64) {
+    // reference maximal-PF counts from published chromatic polynomials (OEIS A334278)
+    const CHROMATIC_T10: [u128; 6] = [0, 1, 3, 133, 3_040_575, 81_768_640_551_939_777];
+    let t0 = Instant::now();
+    let e = burn::estimate(g, samples, 0x5eed_2026_0819);
+    println!("samples               : {}", e.samples);
+    println!(
+        "maximal PFs (est)     : {:.4e}  +- {:.1e}  (rel err {:.2}%)",
+        e.leaves_mean,
+        e.leaves_stderr,
+        100.0 * e.leaves_stderr / e.leaves_mean
+    );
+    if let Some(d) = dim {
+        let r = CHROMATIC_T10[d as usize] as f64;
+        println!(
+            "  reference (chromatic): {:.4e}  -> estimate off by {:+.2} standard errors",
+            r,
+            (e.leaves_mean - r) / e.leaves_stderr
+        );
+    }
+    println!(
+        "spanning trees (est)  : {:.4e}  +- {:.1e}  (rel err {:.2}%)",
+        e.trees_mean,
+        e.trees_stderr,
+        100.0 * e.trees_stderr / e.trees_mean
+    );
+    if let Some(d) = dim {
+        let r = exact::stanley_qn_trees(d) as f64;
+        println!(
+            "  reference (Stanley)  : {:.4e}  -> estimate off by {:+.2} standard errors",
+            r,
+            (e.trees_mean - r) / e.trees_stderr
+        );
+    }
+    println!("elapsed               : {:.2?}", t0.elapsed());
+}
+
+/// Mass-formula experiment: classify spanning trees of Q_dim by
+/// (S, U) where S = direction-0 vertical support and U = multiset projection
+/// of the horizontal edges onto the base Q_{dim-1} (multiplicity 1 = free
+/// level choice, 2 = both levels). Then test, for every class, the competing
+/// laws  N * d = 2^m  vs  N = d * 2^(m-2)  where N = #trees in the class,
+/// d = #decompositions of U into (base spanning tree) + (S-rooted forest),
+/// and m = #multiplicity-1 edges. Exact for dim <= 4.
+fn cmd_project(g: &Graph, dim: u32) {
+    use rayon::prelude::*;
+    use std::collections::HashMap;
+    let t0 = Instant::now();
+    let n = g.n;
+    let bn = n / 2;
+    let eids = bij::edge_ids(g);
+
+    // base edge indexing: Q_{dim-1} on compressed labels u = v >> 1
+    let base = Graph::hypercube(dim - 1);
+    let mut be_id = vec![vec![usize::MAX; bn]; bn];
+    let mut base_edges = Vec::new();
+    for u in 0..bn {
+        for v in u + 1..bn {
+            if base.adj[u][v] > 0 {
+                be_id[u][v] = base_edges.len();
+                be_id[v][u] = base_edges.len();
+                base_edges.push((u, v));
+            }
+        }
+    }
+    let ne = base_edges.len();
+    assert!(2 * ne <= 64, "U encoding needs 2 bits per base edge");
+
+    // classify all trees by (S, U)
+    let mut boxes: Vec<(Vec<u32>, Vec<u32>)> = Vec::new();
+    burn::enumerate(g, &mut |b| boxes.push((b.bottom.to_vec(), b.top.to_vec())));
+    let maps: Vec<HashMap<(u64, u64), u64>> = boxes
+        .par_iter()
+        .map(|(bot, top)| {
+            let mut local: HashMap<(u64, u64), u64> = HashMap::new();
+            let mut f = bot.clone();
+            f[0] = 0;
+            loop {
+                let t = bij::pi(g, &eids, &f);
+                let mut s_mask = 0u64;
+                let mut u_enc = 0u64;
+                for v in 1..n {
+                    let p = t[v] as usize;
+                    if v ^ p == 1 {
+                        s_mask |= 1 << (v >> 1);
+                    } else {
+                        let e = be_id[v >> 1][p >> 1];
+                        u_enc += 1 << (2 * e);
+                    }
+                }
+                *local.entry((s_mask, u_enc)).or_default() += 1;
+                let mut i = 1;
+                loop {
+                    if i == n {
+                        return local;
+                    }
+                    f[i] += 1;
+                    if f[i] <= top[i] {
+                        break;
+                    }
+                    f[i] = bot[i];
+                    i += 1;
+                }
+            }
+        })
+        .collect();
+    let mut classes: HashMap<(u64, u64), u64> = HashMap::new();
+    for m in maps {
+        for (k, v) in m {
+            *classes.entry(k).or_default() += v;
+        }
+    }
+    println!("{} (S,U) classes over the spanning trees of Q{dim}", classes.len());
+
+    // base spanning trees as edge masks
+    let base_eids = bij::edge_ids(&base);
+    let mut base_tree_masks: Vec<u64> = Vec::new();
+    {
+        let mut bboxes: Vec<(Vec<u32>, Vec<u32>)> = Vec::new();
+        burn::enumerate(&base, &mut |b| bboxes.push((b.bottom.to_vec(), b.top.to_vec())));
+        for (bot, top) in bboxes {
+            let mut f = bot.clone();
+            f[0] = 0;
+            loop {
+                let t = bij::pi(&base, &base_eids, &f);
+                let mut mask = 0u64;
+                for v in 1..bn {
+                    mask |= 1 << be_id[v][t[v] as usize];
+                }
+                base_tree_masks.push(mask);
+                let mut i = 1;
+                loop {
+                    if i == bn {
+                        break;
+                    }
+                    f[i] += 1;
+                    if f[i] <= top[i] {
+                        break;
+                    }
+                    f[i] = bot[i];
+                    i += 1;
+                }
+                if i == bn {
+                    break;
+                }
+            }
+        }
+    }
+
+    // S-rooted forest test for an edge mask
+    let s_forest = |mask: u64, s: u64| -> bool {
+        let mut parent: Vec<usize> = (0..bn).collect();
+        fn find(p: &mut Vec<usize>, mut x: usize) -> usize {
+            while p[x] != x {
+                p[x] = p[p[x]];
+                x = p[x];
+            }
+            x
+        }
+        for e in 0..ne {
+            if mask >> e & 1 == 1 {
+                let (a, b) = base_edges[e];
+                let (ra, rb) = (find(&mut parent, a), find(&mut parent, b));
+                if ra == rb {
+                    return false; // cycle
+                }
+                parent[ra] = rb;
+            }
+        }
+        // each component exactly one S vertex
+        let mut seen = vec![0u32; bn];
+        for v in 0..bn {
+            if s >> v & 1 == 1 {
+                let r = find(&mut parent, v);
+                seen[r] += 1;
+            }
+        }
+        (0..bn).all(|v| {
+            let r = find(&mut parent, v);
+            seen[r] == 1
+        })
+    };
+
+    // evaluate both laws on every class
+    let rows: Vec<((u64, u64), u64)> = classes.into_iter().collect();
+    let verdicts: Vec<(u64, u64, u64, u32, u64, bool, bool)> = rows
+        .par_iter()
+        .map(|&((s, u_enc), count)| {
+            let mut m1 = 0u32;
+            let mut mult = [0u8; 64];
+            for e in 0..ne {
+                let c = (u_enc >> (2 * e) & 3) as u8;
+                mult[e] = c;
+                if c == 1 {
+                    m1 += 1;
+                }
+            }
+            // d = # base trees T (edge mask, one copy each) contained in U with
+            // U - T a simple S-rooted forest
+            let mut d = 0u64;
+            for &tm in &base_tree_masks {
+                let mut ok = true;
+                let mut rem = 0u64;
+                for e in 0..ne {
+                    let used = (tm >> e & 1) as u8;
+                    if used > mult[e] {
+                        ok = false;
+                        break;
+                    }
+                    let left = mult[e] - used;
+                    if left > 1 {
+                        ok = false;
+                        break;
+                    }
+                    if left == 1 {
+                        rem |= 1 << e;
+                    }
+                }
+                if ok && s_forest(rem, s) {
+                    d += 1;
+                }
+            }
+            let mass = d > 0 && count * d == 1u64 << m1;
+            let dicho = d > 0 && (count == d << m1 || 4 * count == d << m1);
+            (s, u_enc, count, m1, d, mass, dicho)
+        })
+        .collect();
+
+    let total = verdicts.len();
+    let mass_ok = verdicts.iter().filter(|v| v.5).count();
+    let dicho_ok = verdicts.iter().filter(|v| v.6).count();
+    let violators = verdicts.iter().filter(|v| !v.5 && !v.6).count();
+    println!("law  N*d = 2^m           holds in {mass_ok}/{total} classes");
+    println!("law  N in {{d*2^m, d*2^(m-2)}} holds in {dicho_ok}/{total} classes");
+    if violators > 0 {
+        println!("classes violating BOTH: {violators}; samples (S U N d m):");
+        for v in verdicts.iter().filter(|v| !v.5 && !v.6).take(8) {
+            println!("  S={:#b} U={:#x} N={} d={} m={}", v.0, v.1, v.2, v.4, v.3);
+        }
+    }
+    if let Some(path) = std::env::args().nth(3) {
+        let mut w = std::io::BufWriter::new(std::fs::File::create(&path).unwrap());
+        for v in verdicts.iter().filter(|v| !v.5 && !v.6) {
+            writeln!(w, "{} {} {} {} {}", v.0, v.1, v.2, v.4, v.3).unwrap();
+        }
+        w.flush().unwrap();
+        eprintln!("violators dumped to {path}");
+    }
+    println!("elapsed: {:.2?}", t0.elapsed());
+}
+
+/// Piece-2 data: exact census of (tree, root) pairs of Q_dim by vertical
+/// support S in direction 0 (all directions are equivalent by symmetry;
+/// computed for every direction to confirm). Reports count(S) and
+/// count(S)/2^|S| — the residual N(S) a bijective recursion must explain.
+fn cmd_census(g: &Graph, dim: u32) {
+    use rayon::prelude::*;
+    use std::collections::HashMap;
+    let t0 = Instant::now();
+    let n = g.n;
+    let eids = bij::edge_ids(g);
+
+    // parallel over the canonical boxes: each worker expands its boxes' PFs,
+    // maps to trees, tallies (direction, support) over all n rootings
+    let mut boxes: Vec<(Vec<u32>, Vec<u32>)> = Vec::new();
+    burn::enumerate(g, &mut |b| boxes.push((b.bottom.to_vec(), b.top.to_vec())));
+    let maps: Vec<HashMap<(u32, u64), u64>> = boxes
+        .par_iter()
+        .map(|(bot, top)| {
+            let mut local: HashMap<(u32, u64), u64> = HashMap::new();
+            let mut f = bot.clone();
+            f[0] = 0;
+            loop {
+                let t = bij::pi(g, &eids, &f);
+                // vertical support is root-independent: tally once, weight n (rootings)
+                for d in 0..dim {
+                    let mut s_mask = 0u64;
+                    for u in 0..n {
+                        if u >> d & 1 == 0 {
+                            let b = u | (1usize << d);
+                            if t[u] == b as i32 || t[b] == u as i32 {
+                                s_mask |= 1 << u;
+                            }
+                        }
+                    }
+                    *local.entry((d, s_mask)).or_default() += n as u64;
+                }
+                let mut i = 1;
+                loop {
+                    if i == n {
+                        return local;
+                    }
+                    f[i] += 1;
+                    if f[i] <= top[i] {
+                        break;
+                    }
+                    f[i] = bot[i];
+                    i += 1;
+                }
+            }
+        })
+        .collect();
+    let mut counts: HashMap<(u32, u64), u64> = HashMap::new();
+    for m in maps {
+        for (k, v) in m {
+            *counts.entry(k).or_default() += v;
+        }
+    }
+
+    // S-rooted spanning forest count of the base hypercube Q_{dim-1}:
+    // determinant of the base Laplacian with the rows/columns of S removed
+    // (all-minors Matrix-Tree theorem). Base vertex u <-> Q_dim vertex with
+    // direction-0 bit 0, compressed label u (0..2^{dim-1}).
+    let bn = 1usize << (dim - 1);
+    let forest_det = |s: u64| -> u128 {
+        let keep: Vec<usize> = (0..bn).filter(|&u| s >> (2 * u) & 1 == 0).collect();
+        let m = keep.len();
+        if m == 0 {
+            return 1;
+        }
+        let mut a = vec![vec![0i128; m]; m];
+        for (i, &u) in keep.iter().enumerate() {
+            a[i][i] = (dim - 1) as i128;
+            for (j, &v) in keep.iter().enumerate() {
+                if (u ^ v).count_ones() == 1 {
+                    a[i][j] = -1;
+                }
+            }
+        }
+        // Bareiss
+        let mut sign = 1i128;
+        let mut prev = 1i128;
+        for k in 0..m {
+            if a[k][k] == 0 {
+                let Some(p) = (k + 1..m).find(|&i| a[i][k] != 0) else { return 0 };
+                a.swap(k, p);
+                sign = -sign;
+            }
+            for i in k + 1..m {
+                for j in k + 1..m {
+                    a[i][j] = (a[i][j] * a[k][k] - a[i][k] * a[k][j]) / prev;
+                }
+                a[i][k] = 0;
+            }
+            prev = a[k][k];
+        }
+        (sign * a[m - 1][m - 1]) as u128
+    };
+    let base_rooted: u128 = exact::stanley_qn_trees(dim - 1) * (1u128 << (dim - 1));
+
+    // symmetry check across directions: compare multisets of counts by |S|
+    let mut rows: Vec<(u32, u64, u64)> = counts
+        .iter()
+        .filter(|((d, _), _)| *d == 0)
+        .map(|((_, s), &c)| (s.count_ones(), *s, c))
+        .collect();
+    rows.sort();
+    println!("(tree,root) pairs of Q{dim} by direction-0 vertical support S (base = Q{}):", dim - 1);
+    println!("conjecture: count(S) = 2^|S| * F_base(S) * {base_rooted}   [F = S-rooted forests of base]");
+    println!("{:>4} {:>18} {:>14} {:>10} {:>10}", "|S|", "S (base mask)", "count", "F_base(S)", "match?");
+    let mut by_size: HashMap<u32, Vec<u64>> = HashMap::new();
+    let mut all_match = true;
+    for (k, s, c) in &rows {
+        let f = forest_det(*s);
+        let predicted = (1u128 << k) * f * base_rooted;
+        let matches = predicted == *c as u128;
+        all_match &= matches;
+        println!(
+            "{:>4} {:>18} {:>14} {:>10} {:>10}",
+            k,
+            format!("{s:#b}"),
+            c,
+            f,
+            if matches { "YES" } else { "NO" }
+        );
+        by_size.entry(*k).or_default().push(*c);
+    }
+    println!("support product conjecture holds for ALL classes: {all_match}");
+    let total: u64 = rows.iter().map(|(_, _, c)| *c).sum();
+    println!("total (tree,root) pairs: {total} (should be {} * 2^{dim})", exact::stanley_qn_trees(dim));
+    // does count depend on S only through |S|?
+    let mut keys: Vec<&u32> = by_size.keys().collect();
+    keys.sort();
+    for k in keys {
+        let v = &by_size[k];
+        let same = v.iter().all(|&x| x == v[0]);
+        println!(
+            "  |S| = {k}: {} classes, counts {}",
+            v.len(),
+            if same { format!("ALL EQUAL = {}", v[0]) } else { format!("VARY: {:?}", { let mut w = v.clone(); w.sort(); w }) }
+        );
+    }
+    // direction symmetry
+    for d in 1..dim {
+        let mut other: Vec<u64> = counts.iter().filter(|((dd, _), _)| *dd == d).map(|(_, &c)| c).collect();
+        let mut base: Vec<u64> = rows.iter().map(|(_, _, c)| *c).collect();
+        other.sort();
+        base.sort();
+        println!("  direction {d} count-multiset == direction 0: {}", other == base);
+    }
+    println!("elapsed: {:.2?}", t0.elapsed());
+}
+
+/// Direction-1 experiment: transport parking functions to spanning trees via
+/// the BCT bijection pi, read off the Bernardi spins of the out-edges at the
+/// weight->=2 vertices, and test whether those 2^n - n - 1 bits are jointly
+/// uniform (the shape a bijective proof of the tree formula needs).
+/// samples = 0: exhaustive over all parking functions (n <= 4).
+/// samples > 0: Wilson-sampled uniform spanning trees (any n): spins read
+/// directly from the tree, plus mu roundtrip sanity.
+fn cmd_spins(g: &Graph, dim: u32, samples: u64) {
+    use std::collections::HashMap;
+    let t0 = Instant::now();
+    let eids = bij::edge_ids(g);
+    let n = g.n;
+
+    // For each direction d and each tree: S = set of base vertices (d-th bit 0)
+    // whose vertical edge {u, u+e_d} is in the tree; spin at u = d-coordinate
+    // of the PARENT endpoint of that edge (the side nearer the root).
+    // Bernardi's Thm 1 transported: conditioned on S, spins should be iid uniform.
+    let mut classes: HashMap<(u32, u64), HashMap<u64, u64>> = HashMap::new();
+    let mut classes_free: HashMap<(u32, u64), HashMap<u64, u64>> = HashMap::new();
+    let mut total = 0u64;
+
+    fn reroot(parent: &[i32], r: usize) -> Vec<i32> {
+        let mut p = parent.to_vec();
+        // reverse the pointers along the old-root path from r
+        let mut v = r as i32;
+        let mut prev = -1i32;
+        while v >= 0 {
+            let next = p[v as usize];
+            p[v as usize] = prev;
+            prev = v;
+            v = next;
+        }
+        p
+    }
+
+    fn tally(
+        dim: u32,
+        n: usize,
+        parent: &[i32],
+        into: &mut HashMap<(u32, u64), HashMap<u64, u64>>,
+    ) {
+        for d in 0..dim {
+            let mut s_mask = 0u64;
+            let mut spinvec = 0u64;
+            for u in 0..n {
+                if u >> d & 1 == 1 {
+                    continue;
+                }
+                let b = u | (1usize << d);
+                if parent[u] == b as i32 {
+                    s_mask |= 1 << u;
+                    spinvec |= 1 << u; // parent endpoint b has d-coordinate 1
+                } else if parent[b] == u as i32 {
+                    s_mask |= 1 << u; // parent endpoint u has d-coordinate 0
+                }
+            }
+            *into.entry((d, s_mask)).or_default().entry(spinvec).or_default() += 1;
+        }
+    }
+
+    let mut record = |parent: &[i32]| {
+        total += 1;
+        tally(dim, n, parent, &mut classes);
+        for r in 0..n {
+            let rp = reroot(parent, r);
+            tally(dim, n, &rp, &mut classes_free);
+        }
+    };
+
+    if samples == 0 {
+        let mut boxes: Vec<(Vec<u32>, Vec<u32>)> = Vec::new();
+        burn::enumerate(g, &mut |b| boxes.push((b.bottom.to_vec(), b.top.to_vec())));
+        for (bot, top) in boxes {
+            let mut f = bot.clone();
+            f[0] = 0;
+            loop {
+                let t = bij::pi(g, &eids, &f);
+                record(&t);
+                let mut i = 1;
+                loop {
+                    if i == n {
+                        break;
+                    }
+                    f[i] += 1;
+                    if f[i] <= top[i] {
+                        break;
+                    }
+                    f[i] = bot[i];
+                    i += 1;
+                }
+                if i == n {
+                    break;
+                }
+            }
+        }
+        println!("exhaustive: {total} parking functions -> trees via BCT pi");
+    } else {
+        // independent samples: rooted-at-0 tally from each Wilson tree, plus a
+        // single uniformly random re-rooting (one entry per tree keeps the
+        // chi-square calibration valid; re-rooting at ALL vertices would put
+        // correlated entries in one class and inflate the statistic)
+        fn next_rand(x: &mut u64) -> u64 {
+            *x = x.wrapping_add(0x9e3779b97f4a7c15);
+            let mut z = *x;
+            z = (z ^ (z >> 30)).wrapping_mul(0xbf58476d1ce4e5b9);
+            z = (z ^ (z >> 27)).wrapping_mul(0x94d049bb133111eb);
+            z ^ (z >> 31)
+        }
+        let mut rng = 0x7ade_2026_0819u64;
+        for _ in 0..samples {
+            let t = bij::wilson(g, &mut rng);
+            total += 1;
+            tally(dim, n, &t, &mut classes);
+            let r = (next_rand(&mut rng) % n as u64) as usize;
+            let rp = reroot(&t, r);
+            tally(dim, n, &rp, &mut classes_free);
+        }
+        println!("{total} Wilson-sampled uniform spanning trees (one random re-rooting each)");
+    }
+
+    // Evaluate uniformity within every (direction, support) class
+    let report = |label: &str, classes: &HashMap<(u32, u64), HashMap<u64, u64>>| {
+        println!("{label}:");
+        for d in 0..dim {
+            let mut nclasses = 0u64;
+            let mut exact_uniform = 0u64;
+            let mut chi2 = 0f64;
+            let mut dof = 0u64;
+            let mut worst: (f64, u64) = (0.0, 0);
+            for ((dd, s), cells) in classes.iter() {
+                if *dd != d {
+                    continue;
+                }
+                nclasses += 1;
+                let k = s.count_ones();
+                let class_total: u64 = cells.values().sum();
+                let ncells = 1u64 << k;
+                let expected = class_total as f64 / ncells as f64;
+                let mut class_chi2 = 0f64;
+                let mut all_equal = true;
+                let mut seen = 0u64;
+                for (_, &c) in cells.iter() {
+                    let dev = c as f64 - expected;
+                    class_chi2 += dev * dev / expected;
+                    if (c as f64 - expected).abs() > 1e-9 {
+                        all_equal = false;
+                    }
+                    seen += 1;
+                }
+                // cells never hit contribute their expectation
+                class_chi2 += (ncells - seen) as f64 * expected;
+                if seen != ncells {
+                    all_equal = false;
+                }
+                if all_equal {
+                    exact_uniform += 1;
+                }
+                chi2 += class_chi2;
+                dof += ncells - 1;
+                if class_chi2 > worst.0 {
+                    worst = (class_chi2, *s);
+                }
+            }
+            println!(
+                "  direction {d}: {nclasses} support-classes, {exact_uniform} EXACTLY uniform; \
+                 total chi2 = {chi2:.1} on {dof} dof (worst class chi2 {:.1} at S={:#b})",
+                worst.0, worst.1
+            );
+        }
+    };
+    report("vertical-edge spins, trees ROOTED AT 0 (via BCT pi)", &classes);
+    report("vertical-edge spins, same trees re-rooted at ALL vertices", &classes_free);
+    println!("elapsed: {:.2?}", t0.elapsed());
 }
 
 fn cmd_hvector(g: &Graph) {
@@ -164,12 +743,16 @@ fn cmd_analyze(g: &Graph, dim: Option<u32>, what: &str) {
         println!("group order           : {} {}", sp.order(), ok(sp.order() == exact::kirchhoff(g)));
         println!("2-rank (even factors) : {}", inv.iter().filter(|&&d| d % 2 == 0).count());
         // coset-representative check: distinct maximal PFs must land in distinct classes
-        let mut keys: Vec<u128> = Vec::new();
-        burn::enumerate(g, &mut |b| keys.push(sp.class_key(&b.top[1..])));
-        let total = keys.len();
-        keys.sort_unstable();
-        keys.dedup();
-        println!("maximal PF classes    : {} distinct of {} {}", keys.len(), total, ok(keys.len() == total));
+        if g.n <= 16 {
+            let mut keys: Vec<u128> = Vec::new();
+            burn::enumerate(g, &mut |b| keys.push(sp.class_key(&b.top[1..])));
+            let total = keys.len();
+            keys.sort_unstable();
+            keys.dedup();
+            println!("maximal PF classes    : {} distinct of {} {}", keys.len(), total, ok(keys.len() == total));
+        } else {
+            println!("maximal PF class check: skipped (too many to enumerate)");
+        }
         println!("elapsed: {:.2?}\n", t0.elapsed());
     }
 
@@ -267,10 +850,66 @@ fn main() {
     };
     match cmd {
         "count" => cmd_count(&g, dim),
+        "estimate" => {
+            let samples: u64 = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(1_000_000);
+            cmd_estimate(&g, dim, samples);
+        }
         "hvector" => cmd_hvector(&g),
         "list-max" => cmd_list_max(&g, args.get(2)),
         "boxes" => cmd_boxes(&g, args.get(2)),
         "analyze" => cmd_analyze(&g, dim, args.get(2).map(String::as_str).unwrap_or("all")),
+        "trees" => {
+            let eids = bij::edge_ids(&g);
+            let mut w = writer_for(args.get(2));
+            let mut boxes: Vec<(Vec<u32>, Vec<u32>)> = Vec::new();
+            burn::enumerate(&g, &mut |b| boxes.push((b.bottom.to_vec(), b.top.to_vec())));
+            for (bot, top) in boxes {
+                let mut f = bot.clone();
+                f[0] = 0;
+                loop {
+                    let t = bij::pi(&g, &eids, &f);
+                    writeln!(w, "{:?}", &t[..]).unwrap();
+                    let mut i = 1;
+                    loop {
+                        if i == g.n {
+                            break;
+                        }
+                        f[i] += 1;
+                        if f[i] <= top[i] {
+                            break;
+                        }
+                        f[i] = bot[i];
+                        i += 1;
+                    }
+                    if i == g.n {
+                        break;
+                    }
+                }
+            }
+            w.flush().unwrap();
+        }
+        "project" => {
+            let Some(d) = dim else {
+                eprintln!("project is defined for hypercubes only");
+                std::process::exit(1);
+            };
+            cmd_project(&g, d);
+        }
+        "census" => {
+            let Some(d) = dim else {
+                eprintln!("census is defined for hypercubes only");
+                std::process::exit(1);
+            };
+            cmd_census(&g, d);
+        }
+        "spins" => {
+            let Some(d) = dim else {
+                eprintln!("spins is defined for hypercubes only");
+                std::process::exit(1);
+            };
+            let samples: u64 = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(0);
+            cmd_spins(&g, d, samples);
+        }
         _ => {
             eprintln!("{USAGE}");
             std::process::exit(2);

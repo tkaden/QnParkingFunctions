@@ -1,0 +1,14 @@
+2459160 (S,U) classes over the spanning trees of Q4
+law  N*d = 2^m           holds in 2353620/2459160 classes
+law  N in {d*2^m, d*2^(m-2)} holds in 1286400/2459160 classes
+classes violating BOTH: 105540; samples (S U N d m):
+  S=0b100010 U=0x55a515 N=48 d=24 m=9
+  S=0b1000010 U=0x62a055 N=12 d=6 m=5
+  S=0b10110 U=0x944664 N=24 d=6 m=6
+  S=0b1010000 U=0x619219 N=12 d=6 m=5
+  S=0b10111 U=0x684554 N=48 d=6 m=7
+  S=0b100100 U=0x9510a6 N=12 d=6 m=5
+  S=0b101000 U=0x459595 N=56 d=28 m=9
+  S=0b101000 U=0x5a565 N=24 d=12 m=7
+violators dumped to results/q4_violators.txt
+elapsed: 457.47s

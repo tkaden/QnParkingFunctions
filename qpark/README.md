@@ -22,6 +22,9 @@ cargo build --release
 ./target/release/qpark list-max q3 out.txt # catalog of maximal parking functions
 ./target/release/qpark boxes   q3 out.txt  # the canonical box partition
 ./target/release/qpark analyze q3          # sandpile SNF, Mobius, orbits, box map
+./target/release/qpark estimate q5 5000000 # Knuth random-descent count estimates
+./target/release/qpark spins q3            # Bernardi spin experiment (exhaustive)
+./target/release/qpark spins q5 1000000    # same, Wilson-sampled uniform trees
 ./target/release/qpark validate            # brute-force cross-checks
 ```
 

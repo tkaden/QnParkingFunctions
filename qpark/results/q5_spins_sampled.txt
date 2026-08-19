@@ -1,0 +1,14 @@
+1000000 Wilson-sampled uniform spanning trees (one random re-rooting each)
+vertical-edge spins, trees ROOTED AT 0 (via BCT pi):
+  direction 0: 63244 support-classes, 0 EXACTLY uniform; total chi2 = 33782078.2 on 33277492 dof (worst class chi2 32767.0 at S=0b1010101010101010100010101010101)
+  direction 1: 63273 support-classes, 0 EXACTLY uniform; total chi2 = 33947237.4 on 33433623 dof (worst class chi2 32767.0 at S=0b110011001100110011001100010011)
+  direction 2: 63206 support-classes, 0 EXACTLY uniform; total chi2 = 33872864.9 on 33362522 dof (worst class chi2 65535.0 at S=0b1111000011110000111100001111)
+  direction 3: 63322 support-classes, 0 EXACTLY uniform; total chi2 = 33965439.6 on 33457638 dof (worst class chi2 32767.0 at S=0b11111110000000011111111)
+  direction 4: 63372 support-classes, 0 EXACTLY uniform; total chi2 = 34165503.1 on 33644468 dof (worst class chi2 32767.0 at S=0b1111111111011111)
+vertical-edge spins, same trees re-rooted at ALL vertices:
+  direction 0: 63244 support-classes, 0 EXACTLY uniform; total chi2 = 33284885.7 on 33277492 dof (worst class chi2 32767.0 at S=0b1010101010101010100010101010101)
+  direction 1: 63273 support-classes, 0 EXACTLY uniform; total chi2 = 33430858.5 on 33433623 dof (worst class chi2 32767.0 at S=0b110011001100110011001100010011)
+  direction 2: 63206 support-classes, 0 EXACTLY uniform; total chi2 = 33370705.0 on 33362522 dof (worst class chi2 65535.0 at S=0b1111000011110000111100001111)
+  direction 3: 63322 support-classes, 1 EXACTLY uniform; total chi2 = 33463093.6 on 33457638 dof (worst class chi2 32767.0 at S=0b111111100000000011111111)
+  direction 4: 63372 support-classes, 4 EXACTLY uniform; total chi2 = 33647023.1 on 33644468 dof (worst class chi2 32767.0 at S=0b1111111111011111)
+elapsed: 11.35s
