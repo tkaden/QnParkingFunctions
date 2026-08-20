@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parking on the Hypercube</title>
+<meta name="description" content="From graphs to the edge of an open problem: a visual walk through the QnParkingFunctions project — burning games, box partitions, and the route to a bijective proof of Stanley's hypercube tree formula.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --paper:#f8f9fb; --card:#ffffff; --ink:#1d2433; --muted:#5a6375;
+    --accent:#2b4bbf; --accent-soft:#e7ebf9; --burn:#c05621; --burn-soft:#f7e8de;
+    --rule:#dde0e8; --code:#eef0f5; --good:#2e7d4f; --bad:#b03030;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#14171f; --card:#1b202b; --ink:#e6e9f0; --muted:#99a1b4;
+      --accent:#8ba3f5; --accent-soft:#232c47; --burn:#e08a5e; --burn-soft:#34251b;
+      --rule:#2b3040; --code:#222836; --good:#6fc492; --bad:#e07070;
+    }
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    background:var(--paper); color:var(--ink); margin:0;
+    font-family:"STIX Two Text", Georgia, serif; font-size:17px; line-height:1.62;
+  }
+  .wrap { max-width:46rem; margin:0 auto; padding:0 20px; }
+  .mono { font-family:"IBM Plex Mono", ui-monospace, Menlo, monospace; }
+  a { color:var(--accent); text-underline-offset:2px; }
+  h1,h2 { text-wrap:balance; }
+  p { text-wrap:pretty; }
+
+  /* hero */
+  header { padding:3.2rem 0 1.5rem; }
+  .eyebrow {
+    font-family:"IBM Plex Mono",monospace; font-size:.72rem; font-weight:600;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--accent);
+  }
+  h1 { font-size:2.6rem; font-weight:700; margin:.5rem 0 .6rem; line-height:1.1; }
+  .standfirst { color:var(--muted); font-size:1.08rem; margin:0; }
+  #tesseract { display:block; margin:1.6rem auto 0; max-width:100%; }
+
+  nav.path {
+    position:sticky; top:0; z-index:5; background:var(--paper);
+    border-bottom:1px solid var(--rule); padding:.45rem 0; overflow-x:auto;
+  }
+  nav.path .wrap { display:flex; gap:1.1rem; white-space:nowrap; max-width:60rem; }
+  nav.path a {
+    font-family:"IBM Plex Mono",monospace; font-size:.7rem; letter-spacing:.08em;
+    text-transform:uppercase; text-decoration:none; color:var(--muted);
+  }
+  nav.path a:hover { color:var(--accent); }
+
+  section { padding:3rem 0 1rem; border-bottom:1px solid var(--rule); }
+  section h2 { font-size:1.5rem; margin:.3rem 0 1rem; }
+  .stagechip {
+    font-family:"IBM Plex Mono",monospace; font-size:.7rem; font-weight:600;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--accent);
+  }
+
+  figure { margin:1.6rem 0; }
+  figure svg, figure canvas, figure video { max-width:100%; height:auto; display:block; margin:0 auto; }
+  figcaption { font-size:.86rem; color:var(--muted); text-align:center; margin-top:.6rem; }
+
+  .panel {
+    background:var(--card); border:1px solid var(--rule); border-radius:10px;
+    padding:1.2rem 1.4rem; margin:1.4rem 0;
+  }
+  .formula {
+    text-align:center; font-size:1.05rem; background:var(--accent-soft);
+    border-radius:8px; padding:.8rem 1rem; margin:1.2rem 0;
+  }
+  .btn {
+    font-family:"IBM Plex Mono",monospace; font-size:.8rem; font-weight:600;
+    background:var(--accent); color:var(--paper); border:none; border-radius:6px;
+    padding:.5rem .9rem; cursor:pointer;
+  }
+  .btn.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .btn:disabled { opacity:.45; cursor:default; }
+  .btnrow { display:flex; gap:.6rem; flex-wrap:wrap; justify-content:center; margin:.8rem 0; }
+
+  table { border-collapse:collapse; width:100%; font-size:.9rem; margin:1rem 0; }
+  th,td { padding:.45rem .8rem; text-align:right; border-bottom:1px solid var(--rule); }
+  th:first-child, td:first-child { text-align:left; }
+  thead th { font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.08em;
+             text-transform:uppercase; color:var(--muted); }
+  td { font-variant-numeric:tabular-nums; }
+  .tablewrap { overflow-x:auto; }
+
+  .chips { display:flex; flex-wrap:wrap; gap:.5rem; justify-content:center; margin:.8rem 0; }
+  .chip {
+    font-family:"IBM Plex Mono",monospace; font-size:.78rem; padding:.25rem .6rem;
+    border-radius:5px; border:1px solid var(--rule); color:var(--muted);
+  }
+  .chip.found { border-color:var(--good); color:var(--good); }
+  .chip.dead  { border-color:var(--bad); color:var(--bad); text-decoration:line-through; }
+
+  .verdict { text-align:center; font-size:1rem; min-height:1.6rem; margin:.4rem 0; }
+  .verdict.good { color:var(--good); } .verdict.bad { color:var(--bad); }
+
+  .timeline { list-style:none; padding:0; margin:1.2rem 0; }
+  .timeline li { display:flex; gap:1rem; padding:.5rem 0; border-bottom:1px dashed var(--rule); }
+  .timeline .yr { font-family:"IBM Plex Mono",monospace; color:var(--accent); min-width:4.2rem; font-size:.85rem; padding-top:.15rem;}
+
+  footer { padding:2.5rem 0 4rem; color:var(--muted); font-size:.9rem; }
+  .papers { display:flex; gap:.8rem; flex-wrap:wrap; margin:.8rem 0; }
+  .papers a {
+    font-family:"IBM Plex Mono",monospace; font-size:.78rem; text-decoration:none;
+    border:1px solid var(--accent); color:var(--accent); border-radius:6px; padding:.45rem .7rem;
+  }
+  svg text { user-select:none; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <span class="eyebrow">QnParkingFunctions · a visual walkthrough</span>
+  <h1>Parking on the Hypercube</h1>
+  <p class="standfirst">From dots-and-lines to the precise edge of an open problem in combinatorics —
+  every idea playable on a four-vertex square before it scales to 10<sup>19</sup>.</p>
+  <canvas id="tesseract" width="640" height="360" aria-label="A rotating four-dimensional hypercube projected to the plane" role="img"></canvas>
+</header>
+
+<nav class="path" aria-label="stages">
+  <div class="wrap">
+    <a href="#cube">1 · Hypercubes</a><a href="#trees">2 · Trees & the formula</a>
+    <a href="#burn">3 · The burning game</a><a href="#maximal">4 · Maximal</a>
+    <a href="#boxes">5 · Box partition</a><a href="#prism">6 · Prisms</a>
+    <a href="#theorem">7 · The theorem</a><a href="#law">8 · The law</a>
+    <a href="#summit">9 · The summit</a>
+  </div>
+</nav>
+
+<!-- ============ 1 HYPERCUBES ============ -->
+<section id="cube"><div class="wrap">
+  <span class="stagechip">Stage 1 · the object</span>
+  <h2>Hypercubes are bit-flip graphs</h2>
+  <p>The hypercube Q<sub>n</sub> has one vertex per binary string of length n, and an edge wherever
+  two strings differ in a single bit. Q<sub>1</sub> is an edge, Q<sub>2</sub> a square, Q<sub>3</sub> a cube,
+  Q<sub>4</sub> the tesseract spinning above. <strong>Hover a vertex</strong> to light up its bit-flips.</p>
+  <div class="btnrow">
+    <button class="btn ghost qn-btn" data-n="1">Q1</button>
+    <button class="btn ghost qn-btn" data-n="2">Q2</button>
+    <button class="btn qn-btn" data-n="3">Q3</button>
+    <button class="btn ghost qn-btn" data-n="4">Q4</button>
+  </div>
+  <figure>
+    <svg id="qnview" viewBox="0 0 560 340" role="img" aria-label="Interactive drawing of the hypercube graph"></svg>
+    <figcaption id="qncap">Q3: 8 vertices, 12 edges — each edge flips one bit.</figcaption>
+  </figure>
+</div></section>
+
+<!-- ============ 2 TREES ============ -->
+<section id="trees"><div class="wrap">
+  <span class="stagechip">Stage 2 · the question</span>
+  <h2>Spanning trees, and a formula with no story</h2>
+  <p>A <strong>spanning tree</strong> connects every vertex using no loops. The square has exactly four —
+  delete any one edge of its cycle. <strong>Step through them:</strong></p>
+  <div class="btnrow"><button class="btn ghost" id="treePrev">◀</button>
+    <span class="mono" id="treeLabel" style="align-self:center">tree 1 / 4</span>
+    <button class="btn ghost" id="treeNext">▶</button></div>
+  <figure><svg id="treeview" viewBox="0 0 240 200" style="max-width:240px" role="img" aria-label="The four spanning trees of the square, one at a time"></svg></figure>
+  <p>In 1999, Stanley's <em>Enumerative Combinatorics</em> (Example 5.6.10) recorded the general count —
+  proved by multiplying matrix eigenvalues, a proof that verifies everything and explains nothing:</p>
+  <p class="formula">c(Q<sub>n</sub>) = 2<sup>2<sup>n</sup>−n−1</sup> · ∏<sub>k</sub> k<sup>C(n,k)</sup>
+  &nbsp;&nbsp;<span class="mono" style="font-size:.85rem">→ 1, 4, 384, 42 467 328, 2.08×10<sup>19</sup>, …</span></p>
+  <p>What nobody has found — not in 1999, not since — is a <strong>bijective</strong> proof: an explicit rule
+  matching each spanning tree with a sequence of independent choices, the way Prüfer's classic bijection
+  explains Cayley's n<sup>n−2</sup>. That missing proof is this project's summit.</p>
+</div></section>
+
+<!-- ============ 3 BURNING ============ -->
+<section id="burn"><div class="wrap">
+  <span class="stagechip">Stage 3 · the tool</span>
+  <h2>Play the burning game</h2>
+  <p>Assign each non-root vertex a <em>resistance</em>. Fire starts at the root <span class="mono">00</span>;
+  a vertex ignites when its number of burning neighbors <em>exceeds</em> its resistance. If everything burns,
+  the assignment is a <strong>parking function</strong>.</p>
+  <div class="panel">
+    <p style="text-align:center;margin:0 0 .4rem"><strong>Click the yellow numbers</strong> to set resistances, then ignite.
+    Can you find all four parking functions?</p>
+    <figure style="margin:.6rem 0"><svg id="burnview" viewBox="0 0 300 250" style="max-width:320px" role="img" aria-label="Interactive burning game on the square"></svg></figure>
+    <div class="btnrow">
+      <button class="btn" id="ignite">ignite 🔥</button>
+      <button class="btn ghost" id="burnReset">reset</button>
+    </div>
+    <p class="verdict" id="burnVerdict"></p>
+    <div class="chips" id="pfChips" aria-label="discovered assignments"></div>
+  </div>
+  <p>Two facts make this game deep. The order of burning never matters (the fire is <em>abelian</em>).
+  And — a theorem for every connected graph — <strong>the parking functions are exactly as numerous as the
+  spanning trees</strong>. Whatever we learn about parking functions is secretly about trees.</p>
+  <figure>
+    <video controls preload="metadata" width="640" src="assets/BurningGame.mp4"></video>
+    <figcaption>The same game, narrated (rendered with manim).</figcaption>
+  </figure>
+</div></section>
+
+<!-- ============ 4 MAXIMAL ============ -->
+<section id="maximal"><div class="wrap">
+  <span class="stagechip">Stage 4 · rigidity</span>
+  <h2>Maximal parking functions</h2>
+  <p>Raise any entry of a maximal parking function and the fire stalls. The square has three:
+  <span class="mono">(1,0,0), (0,1,0), (0,0,1)</span> — and by a rigidity theorem every maximal parking
+  function of a graph has the <em>same</em> total sum, g = E − V + 1. Their counts are Tutte-polynomial
+  evaluations, and they grow fast:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>n</th><th>maximal parking functions</th><th>spanning trees</th></tr></thead>
+    <tbody>
+      <tr><td>2</td><td>3</td><td>4</td></tr>
+      <tr><td>3</td><td>133</td><td>384</td></tr>
+      <tr><td>4</td><td>3 040 575</td><td>42 467 328</td></tr>
+      <tr><td>5</td><td>81 768 640 551 939 777</td><td>≈ 2.08 × 10<sup>19</sup></td></tr>
+    </tbody>
+  </table></div>
+  <p>Note 133 ≠ 384: the two counts are never equal on a graph with a cycle. The project's decade-old goal
+  ("a bijection between them") was impossible as written — the real program, already hinted at by
+  Benson–Chakrabarty–Tetali in 2010, is to use the maximal parking functions to <em>organize</em> everything else.
+  Which is exactly what happened next.</p>
+</div></section>
+
+<!-- ============ 5 BOXES ============ -->
+<section id="boxes"><div class="wrap">
+  <span class="stagechip">Stage 5 · first theorem</span>
+  <h2>The box partition</h2>
+  <p>Give every parking function its <strong>canonical burn order</strong>: when several vertices could ignite,
+  always burn the smallest label. Sorting parking functions by that order turns out to slice them into
+  <em>boxes</em> — intervals [bottom, top] — that tile everything perfectly, one box per maximal parking function:</p>
+  <figure>
+    <svg viewBox="0 0 640 190" role="img" aria-label="The four parking functions of the square tiled into three boxes: one box holds (0,0,0) and (0,0,1); two singleton boxes hold (1,0,0) and (0,1,0)">
+      <g font-family="IBM Plex Mono, monospace" font-size="14" fill="currentColor">
+        <rect x="30"  y="40" width="180" height="110" rx="10" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        <rect x="250" y="40" width="150" height="110" rx="10" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        <rect x="440" y="40" width="150" height="110" rx="10" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        <text x="120" y="80"  text-anchor="middle">(0,0,1) ★</text>
+        <text x="120" y="115" text-anchor="middle">(0,0,0)</text>
+        <text x="325" y="100" text-anchor="middle">(1,0,0) ★</text>
+        <text x="515" y="100" text-anchor="middle">(0,1,0) ★</text>
+        <text x="120" y="175" text-anchor="middle" font-size="12" fill="var(--muted)">burn order 0,1,2,3</text>
+        <text x="325" y="175" text-anchor="middle" font-size="12" fill="var(--muted)">order 0,2,3,1</text>
+        <text x="515" y="175" text-anchor="middle" font-size="12" fill="var(--muted)">order 0,1,3,2</text>
+        <text x="320" y="25" text-anchor="middle" font-size="13" fill="var(--muted)">★ = the box top = a maximal parking function</text>
+      </g>
+    </svg>
+    <figcaption>The square's four parking functions, tiled into three boxes — one per maximal.</figcaption>
+  </figure>
+  <p>This <em>box partition theorem</em> (2026) is why the project's Rust tool <span class="mono">qpark</span> can list
+  each maximal parking function of Q<sub>4</sub> exactly once — all 3 040 575 of them in 1.5 seconds, with the
+  spanning-tree count and the full Tutte diagonal T(1,y) falling out of the same pass. The 2016 Python needed
+  n<sup>n</sup> time; the 2019 version needed a supercomputer.</p>
+</div></section>
+
+<!-- ============ 6 PRISM ============ -->
+<section id="prism"><div class="wrap">
+  <span class="stagechip">Stage 6 · the pivot</span>
+  <h2>Hypercubes are prisms</h2>
+  <p>Q<sub>n</sub> is two copies of Q<sub>n−1</sub> (the <em>levels</em>) plus one vertical <em>rung</em> per
+  vertex. Any spanning tree uses some set S of rungs — its <strong>vertical support</strong>. Sort the square's
+  four trees by their rungs:</p>
+  <figure>
+    <svg viewBox="0 0 660 190" role="img" aria-label="The four spanning trees of the square drawn as prisms over one edge, grouped by which vertical rungs they use: one tree per single rung, two trees using both rungs">
+      <g id="prismrow"></g>
+    </svg>
+    <figcaption>1 tree per single rung, 2 for both rungs: 1 + 1 + 2 = 4. Blue = rungs, green = level edges.</figcaption>
+  </figure>
+  <figure>
+    <video controls preload="metadata" width="640" src="assets/SupportClasses.mp4"></video>
+    <figcaption>The same sort, narrated (manim).</figcaption>
+  </figure>
+</div></section>
+
+<!-- ============ 7 THEOREM ============ -->
+<section id="theorem"><div class="wrap">
+  <span class="stagechip">Stage 7 · proved august 2026</span>
+  <h2>The support-product theorem</h2>
+  <p class="formula">#trees with rung set S &nbsp;=&nbsp; ½ · c(base) · 2<sup>|S|</sup> · F(S)</p>
+  <p>where F(S) counts the ways to break the base into |S| loop-free pieces, one holding each rung vertex.
+  Discovered by exhaustive census (verified for every one of the 3 + 15 + 255 supports of Q<sub>2</sub>,
+  Q<sub>3</sub>, Q<sub>4</sub> — the last over all 679 477 248 tree–root pairs), then proved in three paragraphs.
+  Check it against the real Q<sub>3</sub> census:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>rung set S (in the base square)</th><th>formula</th><th>census</th></tr></thead>
+    <tbody>
+      <tr><td>a single vertex</td><td>½·4·2·4 = 16</td><td>16 ✓</td></tr>
+      <tr><td>two adjacent vertices</td><td>½·4·4·3 = 24</td><td>24 ✓</td></tr>
+      <tr><td>two diagonal vertices</td><td>½·4·4·4 = 32</td><td>32 ✓</td></tr>
+      <tr><td>three vertices</td><td>½·4·8·2 = 32</td><td>32 ✓</td></tr>
+      <tr><td>all four</td><td>½·4·16·1 = 32</td><td>32 ✓</td></tr>
+    </tbody>
+  </table></div>
+  <p>Summing over S and iterating over the n dimensions, the exponents combine by Pascal's rule and
+  <strong>Stanley's formula falls out whole</strong> — a new, elementary, induction-on-dimension derivation.
+  But the eigenvalue-free <em>bijective</em> proof demands more: an explicit rule extracting, from each tree,
+  the recipe of independent choices the right-hand side describes.</p>
+</div></section>
+
+<!-- ============ 8 LAW ============ -->
+<section id="law"><div class="wrap">
+  <span class="stagechip">Stage 8 · proved august 2026</span>
+  <h2>The class-level law</h2>
+  <p>Zoom all the way in. Delete a tree's rungs, flatten both levels onto the base: you get a multiset U of base
+  edges (doubled = used in both levels, single = carries a free bit — <em>which level?</em>). The finest possible
+  counting statement is now a theorem:</p>
+  <p class="formula">#trees in class (S, U) &nbsp;=&nbsp; d(S, U) · 2<sup>|S|−1</sup></p>
+  <p>where d counts the ways U splits into (base spanning tree) ⊎ (S-rooted forest) — and every split shows up
+  <em>in person</em>, as the "polarized" tree carrying the spanning tree on level 0 and the forest on level 1:</p>
+  <figure>
+    <svg viewBox="0 0 640 170" role="img" aria-label="Schematic of one class: eight level-assignments, four valid, grouped into two blocks of two, each block containing one starred polarized tree">
+      <g font-family="IBM Plex Mono, monospace" font-size="12">
+        <g id="lawcells"></g>
+        <text x="320" y="20" text-anchor="middle" fill="var(--muted)">the 2^m level-assignments of one real Q3 class (S = two adjacent rung vertices, m = 3)</text>
+        <text x="320" y="160" text-anchor="middle" fill="var(--muted)">4 valid = d·2^(|S|−1) = 2 splits × 2 bits — each block holds one polarized tree ★</text>
+      </g>
+    </svg>
+  </figure>
+  <p>Proof: give every base edge its own variable, watch the prism's weighted Laplacian split in two under the
+  level swap, and read off one coefficient. Verified beforehand on <strong>all 2 459 292 classes</strong> of
+  Q<sub>3</sub> and Q<sub>4</sub>. With this, <em>every counting statement in the program is proven, down to the
+  last stratum.</em></p>
+</div></section>
+
+<!-- ============ 9 SUMMIT ============ -->
+<section id="summit"><div class="wrap">
+  <span class="stagechip">Stage 9 · the open frontier</span>
+  <h2>What remains: one map</h2>
+  <p>All the numbers now match by theorem. The one thing missing is the <strong>straightening map</strong>: an
+  explicit rule pairing each tree of a class with (its polarized normal form, |S|−1 free bits) — no counting
+  allowed, pure construction. It is solved when U's support is acyclic; empirically the fibers are cosets in the
+  bit-space, so a cycle-by-cycle rerouting algorithm is the natural shape. Whoever builds it completes the first
+  bijective proof of Stanley's formula.</p>
+  <ul class="timeline">
+    <li><span class="yr">1999</span><span>Stanley, EC2 Example 5.6.10: "a direct combinatorial proof of this formula is not known."</span></li>
+    <li><span class="yr">2010</span><span>Benson–Chakrabarty–Tetali connect maximal parking functions, orientations, and the hypercube question.</span></li>
+    <li><span class="yr">2012</span><span>Bernardi: two combinatorial proofs — but no bijection.</span></li>
+    <li><span class="yr">2016</span><span>This project begins: enumerate maximal Q<sub>n</sub>-parking functions.</span></li>
+    <li><span class="yr">2024</span><span>EC2 second edition: a <em>bijective</em> proof is still not known.</span></li>
+    <li><span class="yr">2026</span><span>Box partition · support-product theorem · class-level law · polarization — the problem is reduced to one explicit map.</span></li>
+  </ul>
+</div></section>
+
+<footer><div class="wrap">
+  <p><strong>Read the mathematics:</strong></p>
+  <div class="papers">
+    <a href="assets/enumeration-paper.pdf">enumeration paper (PDF)</a>
+    <a href="assets/support-product-paper.pdf">support-product paper (PDF)</a>
+    <a href="assets/box-partition-note.pdf">box-partition note (PDF)</a>
+    <a href="https://github.com/tkaden/QnParkingFunctions">the repository & qpark</a>
+  </div>
+  <p>Every number on this page was computed and cross-verified by <span class="mono">qpark</span> in this
+  repository. Site and results: the QnParkingFunctions project, August 2026.</p>
+</div></footer>
+
+<script>
+"use strict";
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const SVGNS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+/* ---------- tesseract hero ---------- */
+(function () {
+  const cv = document.getElementById("tesseract");
+  const ctx = cv.getContext("2d");
+  const V = [], E = [];
+  for (let i = 0; i < 16; i++) V.push([i&1?1:-1, i&2?1:-1, i&4?1:-1, i&8?1:-1]);
+  for (let i = 0; i < 16; i++) for (let j = i+1; j < 16; j++) {
+    const x = i ^ j; if ((x & (x-1)) === 0) E.push([i, j]);
+  }
+  let scaleSmooth = 60;
+  function frame(t) {
+    const a = t*0.00035, b = t*0.00022;
+    const W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    const raw = V.map(v => {
+      let [x, y, z, w] = v;
+      // rotate in x–w and y–z planes
+      let x1 = x*Math.cos(a) - w*Math.sin(a), w1 = x*Math.sin(a) + w*Math.cos(a);
+      let y1 = y*Math.cos(b) - z*Math.sin(b), z1 = y*Math.sin(b) + z*Math.cos(b);
+      const s4 = 2.4 / (2.4 - w1);          // 4D -> 3D  (|w1| <= sqrt2, s4 <= 2.5)
+      const X = x1*s4, Y = y1*s4, Z = z1*s4;
+      const s3 = 9 / (9 - Z);               // 3D -> 2D
+      return [X*s3, Y*s3, (s4+s3)/2];
+    });
+    // smoothed auto-fit so extreme projections never clip
+    const maxR = Math.max(...raw.map(p => Math.max(Math.abs(p[0]), Math.abs(p[1]))), .1);
+    scaleSmooth = .92*scaleSmooth + .08*(Math.min(W, H)/2 - 14)/maxR;
+    const pts = raw.map(p => [W/2 + p[0]*scaleSmooth, H/2 + p[1]*scaleSmooth, p[2]]);
+    ctx.lineWidth = 1.4;
+    const ink = css("--ink"), acc = css("--accent");
+    for (const [i, j] of E) {
+      const d = (pts[i][2] + pts[j][2]) / 2;
+      ctx.strokeStyle = ink; ctx.globalAlpha = Math.min(1, Math.max(.15, d - .55));
+      ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[j][0], pts[j][1]); ctx.stroke();
+    }
+    ctx.globalAlpha = 1; ctx.fillStyle = acc;
+    for (const p of pts) { ctx.beginPath(); ctx.arc(p[0], p[1], 2.6, 0, 7); ctx.fill(); }
+  }
+  if (reduced) frame(9000);
+  else requestAnimationFrame(function loop(t) { frame(t); requestAnimationFrame(loop); });
+})();
+
+/* ---------- Qn explorer ---------- */
+(function () {
+  const svg = document.getElementById("qnview");
+  const cap = document.getElementById("qncap");
+  const dirs = [[1.7,0],[0,-1.7],[.8,-.62],[-.62,-.85]];
+  const caps = {1:"Q1: 2 vertices, 1 edge.",2:"Q2: the square — 4 vertices, 4 edges.",
+                3:"Q3: 8 vertices, 12 edges — each edge flips one bit.",
+                4:"Q4: 16 vertices, 32 edges — two cubes, twinned."};
+  function draw(n) {
+    svg.innerHTML = "";
+    const N = 1 << n, pos = [];
+    for (let v = 0; v < N; v++) {
+      let x = 0, y = 0;
+      for (let b = 0; b < n; b++) if (v >> b & 1) { x += dirs[b][0]; y += dirs[b][1]; }
+      pos.push([x, y]);
+    }
+    const xs = pos.map(p=>p[0]), ys = pos.map(p=>p[1]);
+    const mx=(Math.min(...xs)+Math.max(...xs))/2, my=(Math.min(...ys)+Math.max(...ys))/2;
+    const span = Math.max(Math.max(...xs)-Math.min(...xs), Math.max(...ys)-Math.min(...ys), 1);
+    const sc = 250/span;
+    const P = pos.map(p => [280+(p[0]-mx)*sc, 175+(p[1]-my)*sc]);
+    const lines = [];
+    for (let i = 0; i < N; i++) for (let j = i+1; j < N; j++) {
+      const x = i ^ j;
+      if ((x & (x-1)) === 0)
+        lines.push([i, j, el("line", {x1:P[i][0],y1:P[i][1],x2:P[j][0],y2:P[j][1],
+          stroke:"currentColor",opacity:.35,"stroke-width":1.6}, svg)]);
+    }
+    for (let v = 0; v < N; v++) {
+      const c = el("circle", {cx:P[v][0], cy:P[v][1], r:7, fill:css("--card"),
+        stroke:"currentColor","stroke-width":1.6, style:"cursor:pointer"}, svg);
+      const lbl = el("text", {x:P[v][0], y:P[v][1]-12, "text-anchor":"middle",
+        "font-size":11, fill:"currentColor",
+        "font-family":"IBM Plex Mono, monospace"}, svg);
+      lbl.textContent = v.toString(2).padStart(n, "0");
+      if (n === 4) lbl.setAttribute("opacity", .55);
+      c.addEventListener("pointerenter", () => {
+        for (const [i, j, ln] of lines) {
+          const on = (i === v || j === v);
+          ln.setAttribute("stroke", on ? css("--accent") : "currentColor");
+          ln.setAttribute("opacity", on ? 1 : .18);
+          ln.setAttribute("stroke-width", on ? 3 : 1.6);
+        }
+      });
+      c.addEventListener("pointerleave", () => {
+        for (const [,, ln] of lines) {
+          ln.setAttribute("stroke", "currentColor");
+          ln.setAttribute("opacity", .35); ln.setAttribute("stroke-width", 1.6);
+        }
+      });
+    }
+    cap.textContent = caps[n];
+  }
+  document.querySelectorAll(".qn-btn").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll(".qn-btn").forEach(x => x.classList.add("ghost"));
+    b.classList.remove("ghost");
+    draw(+b.dataset.n);
+  }));
+  draw(3);
+})();
+
+/* ---------- spanning tree gallery ---------- */
+(function () {
+  const svg = document.getElementById("treeview");
+  const P = {"00":[50,160],"01":[50,40],"10":[190,160],"11":[190,40]};
+  const EDGES = [["00","01"],["01","11"],["11","10"],["10","00"]];
+  let k = 0;
+  function draw() {
+    svg.innerHTML = "";
+    EDGES.forEach((e, i) => {
+      const used = i !== k;
+      el("line", {x1:P[e[0]][0],y1:P[e[0]][1],x2:P[e[1]][0],y2:P[e[1]][1],
+        stroke: used ? css("--good") : "currentColor",
+        opacity: used ? 1 : .18, "stroke-width": used ? 5 : 1.5,
+        "stroke-dasharray": used ? "" : "4 4"}, svg);
+    });
+    for (const v in P) {
+      el("circle", {cx:P[v][0],cy:P[v][1],r:6,fill:"currentColor"}, svg);
+      const t = el("text",{x:P[v][0],y:P[v][1]+(v[1]==="0"?22:-12),"text-anchor":"middle",
+        "font-size":12,fill:"currentColor","font-family":"IBM Plex Mono, monospace"},svg);
+      t.textContent = v;
+    }
+    document.getElementById("treeLabel").textContent = `tree ${k+1} / 4`;
+  }
+  document.getElementById("treePrev").addEventListener("click",()=>{k=(k+3)%4;draw();});
+  document.getElementById("treeNext").addEventListener("click",()=>{k=(k+1)%4;draw();});
+  draw();
+})();
+
+/* ---------- burning game ---------- */
+(function () {
+  const svg = document.getElementById("burnview");
+  const verdict = document.getElementById("burnVerdict");
+  const chipbox = document.getElementById("pfChips");
+  const P = {"00":[70,190],"01":[70,60],"10":[230,190],"11":[230,60]};
+  const EDGES = [["00","01"],["01","11"],["11","10"],["10","00"]];
+  const NBR = {"00":["01","10"],"01":["00","11"],"10":["00","11"],"11":["01","10"]};
+  const f = {"01":0,"10":0,"11":0};
+  const found = {}, dead = {};
+  let running = false, dots = {}, nums = {};
+
+  const ALL = [];
+  for (let a=0;a<2;a++)for(let b=0;b<2;b++)for(let c=0;c<2;c++) ALL.push(`(${a},${b},${c})`);
+  function chips() {
+    chipbox.innerHTML = "";
+    for (const s of ALL) {
+      const d = document.createElement("span");
+      d.className = "chip" + (found[s] ? " found" : dead[s] ? " dead" : "");
+      d.textContent = s + (found[s] ? " ✓" : dead[s] ? " ✗" : "");
+      chipbox.appendChild(d);
+    }
+  }
+  function key() { return `(${f["01"]},${f["10"]},${f["11"]})`; }
+
+  function draw() {
+    svg.innerHTML = "";
+    for (const [u, v] of EDGES)
+      el("line",{x1:P[u][0],y1:P[u][1],x2:P[v][0],y2:P[v][1],
+        stroke:"currentColor",opacity:.35,"stroke-width":2},svg);
+    for (const v in P) {
+      dots[v] = el("circle",{cx:P[v][0],cy:P[v][1],r:11,
+        fill: v==="00" ? css("--burn") : css("--card"),
+        stroke:"currentColor","stroke-width":1.6},svg);
+      const lb = el("text",{x:P[v][0]+(v[1]==="0"?-24:-24),y:P[v][1]+(v[0]==="0"?( v==="00"||v==="10" ?26:-16):(v==="00"||v==="10"?26:-16)),
+        "font-size":13,fill:"currentColor","font-family":"IBM Plex Mono, monospace"},svg);
+      lb.textContent = v;
+      if (v !== "00") {
+        nums[v] = el("text",{x:P[v][0]+20,y:P[v][1]+5,"font-size":20,
+          fill:"#d4a017","font-family":"IBM Plex Mono, monospace",
+          style:"cursor:pointer","text-anchor":"middle"},svg);
+        nums[v].textContent = f[v];
+        nums[v].addEventListener("click", () => {
+          if (running) return;
+          f[v] = (f[v] + 1) % 3; nums[v].textContent = f[v];
+          verdict.textContent = ""; verdict.className = "verdict";
+          resetColors();
+        });
+      }
+    }
+    const rootLbl = el("text",{x:P["00"][0],y:P["00"][1]+34,"text-anchor":"middle",
+      "font-size":11,fill:css("--burn"),"font-family":"IBM Plex Mono, monospace"},svg);
+    rootLbl.textContent = "root";
+  }
+  function resetColors() {
+    for (const v in dots) dots[v].setAttribute("fill", v==="00" ? css("--burn") : css("--card"));
+  }
+  function ignite() {
+    if (running) return;
+    running = true;
+    resetColors();
+    verdict.textContent = "…"; verdict.className = "verdict";
+    const burnt = new Set(["00"]);
+    const steps = [];
+    for (;;) {
+      const wave = [];
+      for (const v of ["01","10","11"]) {
+        if (burnt.has(v)) continue;
+        const n = NBR[v].filter(u => burnt.has(u)).length;
+        if (n > f[v]) wave.push(v);
+      }
+      if (!wave.length) break;
+      wave.forEach(v => burnt.add(v));
+      steps.push(wave);
+    }
+    let i = 0;
+    const stepMs = reduced ? 0 : 650;
+    (function tick() {
+      if (i < steps.length) {
+        for (const v of steps[i]) dots[v].setAttribute("fill", css("--burn"));
+        i++; setTimeout(tick, stepMs);
+      } else {
+        const win = burnt.size === 4, k = key();
+        const legal = f["01"]<2 && f["10"]<2 && f["11"]<2;
+        if (win) {
+          verdict.textContent = `${k} is a parking function ✓`;
+          verdict.className = "verdict good";
+          found[k] = true;
+        } else {
+          verdict.textContent = `${k}: the fire stalls — not a parking function ✗`;
+          verdict.className = "verdict bad";
+          if (legal) dead[k] = true;
+        }
+        chips();
+        if (Object.keys(found).length === 4) {
+          verdict.textContent += "  — all four found! (= #spanning trees)";
+        }
+        running = false;
+      }
+    })();
+  }
+  document.getElementById("ignite").addEventListener("click", ignite);
+  document.getElementById("burnReset").addEventListener("click", () => {
+    if (running) return;
+    resetColors(); verdict.textContent = ""; verdict.className = "verdict";
+  });
+  draw(); chips();
+})();
+
+/* ---------- prism row (stage 6) ---------- */
+(function () {
+  const g = document.getElementById("prismrow");
+  const trees = [
+    { use:{ra:1,h0:1,h1:1}, label:"rung a: 1 tree" },
+    { use:{rb:1,h0:1,h1:1}, label:"rung b: 1 tree" },
+    { use:{ra:1,rb:1,h0:1}, label:"both rungs" },
+    { use:{ra:1,rb:1,h1:1}, label:"both: 2 trees" },
+  ];
+  trees.forEach((t, i) => {
+    const ox = 45 + i*160;
+    const C = { a0:[ox,130], b0:[ox+90,130], a1:[ox,50], b1:[ox+90,50] };
+    const E = { h0:["a0","b0"], h1:["a1","b1"], ra:["a0","a1"], rb:["b0","b1"] };
+    for (const name in E) {
+      const [u, v] = E[name], used = t.use[name];
+      el("line",{x1:C[u][0],y1:C[u][1],x2:C[v][0],y2:C[v][1],
+        stroke: used ? (name[0]==="r" ? css("--accent") : css("--good")) : "currentColor",
+        opacity: used ? 1 : .22, "stroke-width": used ? 5 : 1.5}, g);
+    }
+    for (const v in C) el("circle",{cx:C[v][0],cy:C[v][1],r:4.5,fill:"currentColor"},g);
+    const tx = el("text",{x:ox+45,y:165,"text-anchor":"middle","font-size":12.5,
+      fill:"currentColor","font-family":"IBM Plex Mono, monospace"},g);
+    tx.textContent = t.label;
+  });
+})();
+
+/* ---------- class-law cells (stage 8) ---------- */
+(function () {
+  const g = document.getElementById("lawcells");
+  // 8 assignments; 4 valid in two blocks of two; one polarized star per block
+  const valid = [0,1,4,5], polar = [0,4];
+  for (let i = 0; i < 8; i++) {
+    const x = 88 + i*62, y = 55;
+    const isV = valid.includes(i);
+    el("rect",{x:x,y:y,width:44,height:44,rx:7,
+      fill: isV ? css("--accent-soft") : "none",
+      stroke: isV ? css("--accent") : "currentColor",
+      "stroke-width": isV ? 2 : 1, opacity: isV ? 1 : .35}, g);
+    if (polar.includes(i)) {
+      const s = el("text",{x:x+22,y:y+29,"text-anchor":"middle","font-size":18,
+        fill:css("--accent")},g);
+      s.textContent = "★";
+    }
+  }
+  // block outlines
+  el("rect",{x:82,y:47,width:118,height:60,rx:10,fill:"none",
+    stroke:css("--good"),"stroke-width":2,"stroke-dasharray":"5 4"},g);
+  el("rect",{x:330,y:47,width:118,height:60,rx:10,fill:"none",
+    stroke:css("--good"),"stroke-width":2,"stroke-dasharray":"5 4"},g);
+  const t1 = el("text",{x:141,y:128,"text-anchor":"middle","font-size":12,fill:css("--good")},g);
+  t1.textContent = "block of split #1";
+  const t2 = el("text",{x:389,y:128,"text-anchor":"middle","font-size":12,fill:css("--good")},g);
+  t2.textContent = "block of split #2";
+})();
+</script>
+</body>
+</html>
