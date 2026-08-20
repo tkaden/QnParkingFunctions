@@ -91,6 +91,65 @@ Bernardi's rerouting involutions for the bit part, and only then quotient by
 the 2^n root choices to reach parking functions rooted at q. Files:
 `q3_spins.txt`, `q4_spins_sampled.txt`, `q5_spins_sampled.txt`.
 
+## THE EXECUTABLE BIJECTIVE PROOF (2026-08-20, continuation session)
+
+Implemented the complete chain (scripts/bijection.py + verify_bijection.py):
+spin flips per Bernardi's induction (pendant-fiber flip; splice-and-recurse
+with unique edge-ids for merged arcs and tagged root colors for transported
+roots), the colored star normal form, and the factor readout. VERIFIED:
+
+- Per-level bijection F_z(G x K2) <-> F_z(G) x F_{z+2}(G): EXHAUSTIVE and
+  EXACT (injective, onto the full product, round-trip) for 6 (base, z)
+  combinations up to 9,800 forests each.
+- n=3: ALL 3,072 rooted spanning trees of Q3 <-> the exact box
+  [2]^3 x [4]^3 x [6], perfect round-trips. A Prufer code for the cube.
+- n=4: 200 uniform random rooted trees: distinct codes in the box
+  [2]^4 [4]^6 [6]^4 [8] (size 679,477,248), all round-trips OK.
+
+Paper now states Theorem "colored hierarchy" and Theorem "Prufer code for
+the hypercube": an explicit algorithmic bijection rooted-trees(Qn) <->
+prod_k [2k]^C(n,k), i.e. A BIJECTIVE PROOF OF STANLEY'S FORMULA, with the
+honest qualifier that the spin normalization is recursive (explicit,
+terminating, machine-verified) rather than closed-form; making it
+closed-form is the one remaining refinement (paper Problem 1). Requires
+human review (Tyler, Brian; ideally Bernardi) before public claims.
+
+## THE ROOTED NORMAL FORM (proved 2026-08-20, "close it out" session)
+
+Root the lift anywhere; spin(u) = level of rung u's endpoint nearer the
+root. NEW THEOREM (two-line bipartite proof, verified over 108,384 rooted
+prism trees of 9 base graphs, zero mismatches — scripts/rooted_spins.py):
+
+    all spins 0  <=>  the lift is POLARIZED and the root is at level 0.
+
+(B is bipartite by level; "every parent at level 0" collapses it to a star.)
+Combined with spin-class equinumerosity per (S,U) class — Bernardi 2012
+Thm 1, whose inductive proof is constructive (atomic move: toggle the level
+of a pendant fiber's single attaching M-edge) — this makes the per-level
+ROOTED bijection a THEOREM:
+
+  (tree of G x K2, root) <-> (rooted base tree) x (spin-colored S-rooted forest)
+
+i.e. eq:setform holds by explicit correspondence, class by class, with no
+factor 1/2 (paper Thm "rooted straightening").
+
+What genuinely remains for a fully self-contained bijective proof of
+Stanley's formula (both stated precisely in the paper):
+ 1. a CLOSED-FORM spin normalization (Bernardi's is recursive);
+ 2. the COLORED HIERARCHY: z-colored rooted forests of G x K2 <->
+    (z-colored) x ((z+2)-colored) rooted forests of G, bijectively, for all
+    even z (the +2 = the two spin values; algebraic proof = the same block
+    identity det(zI + L_{GxK2}) = det(zI+L_G) det((z+2)I+L_G)); iterating
+    over the n directions then yields Stanley's formula via Pascal.
+
+Failed candidates recorded for posterity (scripts/straightening_lab.py,
+candidate_v4.py): nearest-polarized Hamming matching (3035/3042 classes,
+fails on K4); mirror-move orbits (wrong equivalence — |S|=1 classes prove
+fibers are not move-orbits); whole-component splits (1608 lifts have none);
+B-subtree support-unions (666 lifts have none, 1864 ambiguous). Every
+failure narrowed the search: fibers-when-unique were ALWAYS perfect, which
+pointed at the rooted formulation.
+
 ## THE CLASS-LEVEL LAW IS A THEOREM (proved 2026-08-20, late session)
 
 For every connected G, every S, every projection multiset U:

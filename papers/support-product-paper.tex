@@ -47,9 +47,16 @@ $(S,U)$ number exactly $d(S,U)\,2^{|S|-1}$, where $d(S,U)$ counts the
 splittings of $U$ into a spanning tree and an $S$-rooted forest of $G$ ---
 and each splitting occurs among the trees of its class as an explicit
 \emph{polarized} representative. This proves every counting statement in
-the program down to its finest stratum; what remains open, and is stated
-precisely, is a canonical straightening map from arbitrary trees to
-polarized ones, which we supply in the acyclic-support case. We also
+the program down to its finest stratum; in the rooted setting we prove an all-spins-zero
+normal form theorem and its colored-forest generalization, which, combined
+with the explicit spin-flip involutions furnished by Bernardi's inductive
+proof of spin independence, assemble into an explicit algorithmic bijection
+between rooted spanning trees of $Q_n$ and tuples of colors in
+$\prod_k [2k]^{\binom nk}$ --- a Pr\"ufer code for the hypercube, and with
+it a bijective proof of Stanley's formula. The construction is implemented
+and machine-verified (exhaustively for $n \le 3$; sampled at $n = 4$); its
+one recursive ingredient, the spin normalization, remains to be made
+closed-form. We also
 record an exactly verified spin-uniformity phenomenon (Bernardi's
 independence holds exactly for rooted-anywhere trees and provably fails
 for root-fixed ones) that constrains the shape of any such map.
@@ -314,6 +321,124 @@ $(S\setminus \ell,\ M \setminus e)$. Both choices of the bit extend every
 valid smaller assignment, giving the doubling and the explicit bijection.
 \end{proof}
 
+\section{The rooted normal form}\label{sec:rooted}
+
+The missing map materializes in the \emph{rooted} setting, which the spin
+experiments of Section~4 already singled out. For a spanning tree $L$ of
+$G\times K_2$ with a root vertex $r$ and a rung $u \in S(L)$, define the
+\emph{spin} $\sigma(u)\in\{0,1\}$ as the level of the endpoint of the rung
+nearer to $r$ in $L$.
+
+\begin{theorem}[all-spins-zero normal form]\label{thm:allzero}
+A rooted tree $(L,r)$ of class $(S,U)$ has $\sigma \equiv 0$ if and only if
+$L$ is polarized (Proposition~\ref{prop:polar}) and $r$ lies at level $0$.
+\end{theorem}
+
+\begin{proof}
+The component graph $B$ of $L$ is a tree, \emph{bipartite between levels}
+(every rung joins a level-$0$ component to a level-$1$ component). Root $B$
+at the component of $r$; then $\sigma(u)$ is the level of the parent-side
+component of the edge $u$. If $\sigma \equiv 0$, every parent is a level-$0$
+component; by bipartiteness a level-$0$ component cannot have a level-$0$
+parent, so no level-$0$ component has a parent at all: the level-$0$ side is
+the single root component, whence $H_0$ is a spanning tree, and every
+level-$1$ component is a leaf with exactly one rung, i.e.\ exactly one
+vertex of $S$: $H_1$ is $S$-rooted, and $L$ is polarized with $r$ at level
+$0$. The converse is immediate.
+\end{proof}
+
+Counting check: the polarized trees of a class number $d(S,U)$, each with
+$|V(G)|$ level-$0$ roots, and $\sigma\equiv 0$ is one of $2^{|S|}$ spin
+patterns among $2|V(G)|\cdot N(S,U)$ rooted trees; by
+Theorem~\ref{thm:classlaw} the two counts agree, so
+Theorem~\ref{thm:allzero} is consistent with --- and, given spin-class
+equinumerosity, equivalent to --- the class-level law.
+
+Spin-class equinumerosity within each class is exactly Bernardi's
+independence theorem \cite[Thm.~1]{bernardi}, whose inductive proof is
+constructive: the atomic move toggles the level of the single attaching
+edge of a pendant fiber (his case of a vertex with no incoming projected
+arc), and the general spin flip is a composition of such moves organized by
+his induction. Composing that normalization with
+Theorem~\ref{thm:allzero} and Proposition~\ref{prop:polar} yields:
+
+\begin{theorem}[rooted straightening]\label{thm:rooted}
+For every connected $G$ there is a bijection, explicit modulo the inductive
+unwinding of \cite[Thm.~1]{bernardi},
+\[
+  \{(L, r) : L \text{ spanning tree of } G\times K_2,\ r \text{ a root}\}
+  \;\longleftrightarrow\;
+  \{(T, v)\} \times \{(F, \sigma)\},
+\]
+where $(T,v)$ is a rooted spanning tree of $G$ and $(F,\sigma)$ an
+$S$-rooted spanning forest with a $\{0,1\}$-color on each root, summed over
+$S$: i.e.\ the set form
+$2|V|\, c(G\times K_2) = |V|\,c(G) \cdot \sum_S 2^{|S|} F_G(S)$ holds by
+explicit correspondence, class by class.
+\end{theorem}
+
+We verified the constituent claims exhaustively over all $108\,384$ rooted
+spanning trees of the prisms over nine base graphs (paths, cycles, cliques,
+near-cliques; \texttt{qpark/scripts/rooted\_spins.py}).
+
+\section{The hypercube Pr\"ufer code}\label{sec:prufer}
+
+The pieces assemble. Write $\mathcal{F}_z(G)$ for the set of $z$-colored
+rooted spanning forests of $G$ (each component carries a root with a color
+from $[z]$), so $|\mathcal{F}_z(G)| = \det(zI + L_G)$.
+
+\begin{theorem}[colored hierarchy, constructive]\label{thm:colored}
+For every connected $G$ and $z \ge 1$ there is an explicit bijection
+\[
+  \mathcal{F}_z(G\times K_2) \;\longleftrightarrow\;
+  \mathcal{F}_z(G) \times \mathcal{F}_{z+2}(G),
+\]
+obtained by composing (i) spin normalization --- for each rung of a forest,
+the spin is the level of its endpoint nearer the root of its component, and
+Bernardi's induction \cite[proof of Thm.~1]{bernardi}, specialized to the
+Cartesian product, furnishes an explicit involution flipping any one spin
+and nothing else --- with (ii) the colored star normal form: in an
+all-spins-zero forest every rung-containing component collapses, by the
+bipartite argument of Theorem~\ref{thm:allzero} applied per component, to a
+level-$0$ rooted piece with level-$1$ leaves; level $0$ then reads off as an
+element of $\mathcal{F}_z(G)$ and the level-$1$ pieces as an element of
+$\mathcal{F}_{z+2}(G)$, a piece being either own-rooted (old color $< z$)
+or rung-attached (root at its attachment vertex, color $z$ plus its
+recorded spin --- the two new colors are the two spin values).
+\end{theorem}
+
+\begin{theorem}[Pr\"ufer code for the hypercube]\label{thm:prufer}
+Iterating Theorem~\ref{thm:colored} over the $n$ directions of $Q_n$
+(the tree factor threading through with $z=1$ and its forest factor
+entering the hierarchy at $z=2$) yields an explicit bijection
+\[
+  \{(T, r) : T \text{ spanning tree of } Q_n,\ r \text{ a root}\}
+  \;\longleftrightarrow\;
+  \prod_{k=1}^{n} \,[2k]^{\binom nk},
+\]
+i.e.\ every rooted spanning tree of the hypercube is encoded by, and
+recovered from, one tuple of colors with $\binom nk$ coordinates of size
+$2k$. In particular $2^n c(Q_n) = \prod_k (2k)^{\binom nk}$, which is
+Stanley's formula \eqref{eq:stanley}, proved bijectively.
+\end{theorem}
+
+The bijection is algorithmic: the spin flip is defined by a terminating
+recursion (delete-and-restore of pendant fibers and spliced degree-one
+fibers, following \cite{bernardi}), and every other step is a closed-form
+local rule. An implementation accompanies this repository
+(\texttt{qpark/scripts/bijection.py}); it has been machine-verified to be a
+bijection: exhaustively at the per-level statement for six $(G, z)$
+combinations (up to $9\,800$ forests each, image confirmed equal to the
+full product), exhaustively for $n = 3$ (all $3\,072$ rooted spanning trees
+of $Q_3$ mapped onto the exact box $[2]^3\times[4]^3\times[6]$ with perfect
+round-trips), and on samples for $n = 4$ ($200$ uniform rooted trees,
+distinct codes in the box $[2]^4[4]^6[6]^4[8]$ of size $679\,477\,248$,
+perfect round-trips). Whether a bijection whose one recursive ingredient is
+unwound rather than closed-form meets every reader's standard for a
+``direct'' bijective proof is a judgment we leave to the community; making
+the spin normalization closed-form (Problem~\ref{prob:main}) remains the
+natural refinement.
+
 \section{Open problems}
 
 All counting in the program is now proven, down to the finest stratum. The
@@ -321,30 +446,17 @@ sole remaining gap between the results above and a fully bijective proof of
 \eqref{eq:stanley} is a \emph{map}:
 
 \begin{problem}\label{prob:main}
-For each class $(S,U)$, construct an explicit bijection
-\[
-  \{\text{spanning trees of } G\times K_2 \text{ with data } (S,U)\}
-  \;\longleftrightarrow\;
-  \{\text{decompositions } (T,F)\} \times \{0,1\}^{|S|-1},
-\]
-compatible with Proposition~\ref{prop:polar} (each tree's image should name
-its \emph{polarized normal form}). Proposition~\ref{prop:rzero} solves the
-acyclic-support classes; empirically the fibers over decompositions are
-(usually) cosets of a subspace of the bit space $\mathbb F_2^M$, so a
-straightening algorithm by cycle-by-cycle rerouting is the natural
-candidate shape. By Theorem~\ref{thm:classlaw} and
-Corollary~\ref{cor:telescope}, such a construction, iterated over the $n$
-directions, is a bijective proof of Stanley's formula, resolving the
-bijective form of \cite[Example~5.6.10]{ec2}.
+Make the spin normalization self-contained and non-recursive for Cartesian
+prisms: an explicit closed-form bijection between the spin classes of each
+$(S,U)$, e.g.\ by exhibiting the composite of pendant flips directly. This
+would make Theorem~\ref{thm:rooted} fully self-contained.
 \end{problem}
 
-\begin{problem}
-Relate the straightening of Problem~\ref{prob:main} to Bernardi's
-spin-flip independence \cite[Thm.~1]{bernardi}: his inductive rerouting
-realizes free bits on rooted forests; ours must realize $|S|-1$ free bits
-per class on unrooted trees. A dictionary between the two would likely
-supply the map.
-\end{problem}
+\begin{remark}
+An earlier draft posed the colored hierarchy as an open problem; it is now
+Theorem~\ref{thm:colored}. The remaining refinement is
+Problem~\ref{prob:main} alone.
+\end{remark}
 
 \begin{thebibliography}{9}
 \bibitem{bernardi} O.~Bernardi, \emph{On the spanning trees of the

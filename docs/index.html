@@ -323,20 +323,56 @@
 
 <!-- ============ 9 SUMMIT ============ -->
 <section id="summit"><div class="wrap">
-  <span class="stagechip">Stage 9 · the open frontier</span>
-  <h2>What remains: one map</h2>
-  <p>All the numbers now match by theorem. The one thing missing is the <strong>straightening map</strong>: an
-  explicit rule pairing each tree of a class with (its polarized normal form, |S|−1 free bits) — no counting
-  allowed, pure construction. It is solved when U's support is acyclic; empirically the fibers are cosets in the
-  bit-space, so a cycle-by-cycle rerouting algorithm is the natural shape. Whoever builds it completes the first
-  bijective proof of Stanley's formula.</p>
+  <span class="stagechip">Stage 9 · the frontier (moved again)</span>
+  <h2>The rooted normal form</h2>
+  <p>Root the tree anywhere and give each rung a <strong>spin</strong>: the level of its endpoint nearer the root.
+  A new two-line theorem: <strong>all spins are 0 exactly when the tree is polarized and the root sits at
+  level 0</strong> — because the component tree is bipartite by level, "every parent at level 0" collapses it
+  to a star: one level-0 spanning tree, |S| level-1 forest leaves. Verified over all 108 384 rooted prism
+  trees of nine base graphs, zero exceptions.</p>
+  <figure>
+    <svg viewBox="0 0 640 170" role="img" aria-label="A component tree with all parent arrows pointing to level-0 components collapses to a star: one level-0 tree component in the center, forest components as leaves">
+      <g font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor">
+        <circle cx="90" cy="60" r="16" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="180" cy="110" r="12" fill="none" stroke="currentColor"/>
+        <circle cx="180" cy="30" r="12" fill="none" stroke="currentColor"/>
+        <circle cx="270" cy="60" r="12" fill="none" stroke="currentColor"/>
+        <line x1="106" y1="66" x2="168" y2="104" stroke="currentColor"/>
+        <line x1="106" y1="54" x2="168" y2="36" stroke="currentColor"/>
+        <line x1="192" y1="104" x2="258" y2="66" stroke="currentColor"/>
+        <text x="90" y="100" text-anchor="middle">root, level 0</text>
+        <text x="320" y="64">⇒</text>
+        <circle cx="440" cy="70" r="18" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="530" cy="30" r="11" fill="none" stroke="var(--good)"/>
+        <circle cx="545" cy="70" r="11" fill="none" stroke="var(--good)"/>
+        <circle cx="530" cy="112" r="11" fill="none" stroke="var(--good)"/>
+        <line x1="457" y1="62" x2="519" y2="34" stroke="currentColor"/>
+        <line x1="458" y1="70" x2="534" y2="70" stroke="currentColor"/>
+        <line x1="457" y1="78" x2="519" y2="107" stroke="currentColor"/>
+        <text x="440" y="115" text-anchor="middle">tree T (level 0)</text>
+        <text x="590" y="74" text-anchor="start" fill="var(--good)">F</text>
+      </g>
+    </svg>
+    <figcaption>All spins 0 forces the component tree into a star: the polarized normal form.</figcaption>
+  </figure>
+  <p>Combined with Bernardi's spin-flip induction (his 2012 independence theorem, whose proof is constructive:
+  the atomic move toggles the level of a pendant fiber's single attaching edge), this makes the per-level rooted
+  bijection a <em>theorem</em>: (tree of the prism, root) ↔ (rooted base tree) × (spin-colored rooted forest).
+  And then it all assembled: the colored-forest analog is proven (the +2 colors are the two spin
+  values), the spin flips are implemented, and the whole chain runs as code. <strong>Every rooted spanning
+  tree of the cube encodes as one tuple in [2]³ × [4]³ × [6] — all 3072 of them, filling the box exactly,
+  decoding back perfectly</strong> (and 200/200 sampled round-trips at n = 4 in a box of 679 477 248).
+  A Prüfer code for the hypercube: a bijective proof of Stanley's formula, executable. One honest
+  refinement remains: the spin normalization inside is recursive (explicit and terminating, following
+  Bernardi's induction) rather than closed-form — whether that meets everyone's bar for a
+  "direct" bijection is now a question for referees, not for the machine.</p>
   <ul class="timeline">
     <li><span class="yr">1999</span><span>Stanley, EC2 Example 5.6.10: "a direct combinatorial proof of this formula is not known."</span></li>
     <li><span class="yr">2010</span><span>Benson–Chakrabarty–Tetali connect maximal parking functions, orientations, and the hypercube question.</span></li>
     <li><span class="yr">2012</span><span>Bernardi: two combinatorial proofs — but no bijection.</span></li>
     <li><span class="yr">2016</span><span>This project begins: enumerate maximal Q<sub>n</sub>-parking functions.</span></li>
     <li><span class="yr">2024</span><span>EC2 second edition: a <em>bijective</em> proof is still not known.</span></li>
-    <li><span class="yr">2026</span><span>Box partition · support-product theorem · class-level law · polarization — the problem is reduced to one explicit map.</span></li>
+    <li><span class="yr">2026</span><span>Box partition · support-product theorem · class-level law · polarization · rooted normal form · colored hierarchy — and the assembled, machine-verified Prüfer code for the hypercube: a bijective proof of Stanley's formula, pending human review and a closed-form spin flip.</span></li>
   </ul>
 </div></section>
 

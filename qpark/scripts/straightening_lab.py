@@ -1,0 +1,177 @@
+"""Laboratory for the straightening map (Problem 1).
+
+For small connected base graphs G: enumerate every spanning tree of the
+prism G x K2, classify by (S, U, x) where x = level assignment of the
+multiplicity-1 edges, and test candidate straightening maps
+
+    valid x  ->  (polarized representative, |S|-1 bits)
+
+for exact bijectivity, class by class.
+
+Proven facts the lab relies on:
+  * #valid x in a class = d * 2^(|S|-1)   (class-level law)
+  * the polarized lifts (level-0 graph a spanning tree, level-1 graph an
+    S-rooted forest) correspond exactly to the d decompositions.
+"""
+import itertools
+from collections import defaultdict
+
+
+# ---------- base graphs ----------
+def base_graphs():
+    return {
+        "path3": (3, [(0, 1), (1, 2)]),
+        "path4": (4, [(0, 1), (1, 2), (2, 3)]),
+        "triangle": (3, [(0, 1), (1, 2), (0, 2)]),
+        "square": (4, [(0, 1), (1, 3), (2, 3), (0, 2)]),
+        "tri+pendant": (4, [(0, 1), (1, 2), (0, 2), (2, 3)]),
+        "K4": (4, [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]),
+        "C5": (5, [(0, 1), (1, 2), (2, 3), (3, 4), (0, 4)]),
+        "K4-e": (4, [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3)]),
+        "bowtie": (5, [(0, 1), (1, 2), (0, 2), (2, 3), (3, 4), (2, 4)]),
+    }
+
+
+def comps_of(n, edges):
+    p = list(range(n))
+    def find(x):
+        while p[x] != x:
+            p[x] = p[p[x]]
+            x = p[x]
+        return x
+    for a, b in edges:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            p[ra] = rb
+    groups = defaultdict(set)
+    for v in range(n):
+        groups[find(v)].add(v)
+    return list(groups.values())
+
+
+def is_forest(n, edges):
+    p = list(range(n))
+    def find(x):
+        while p[x] != x:
+            p[x] = p[p[x]]
+            x = p[x]
+        return x
+    for a, b in edges:
+        ra, rb = find(a), find(b)
+        if ra == rb:
+            return False
+        p[ra] = rb
+    return True
+
+
+def spanning_trees(n, edges):
+    """All spanning trees (edge-index tuples) of a small graph, brute force."""
+    out = []
+    for sub in itertools.combinations(range(len(edges)), n - 1):
+        es = [edges[i] for i in sub]
+        if is_forest(n, es) and len(comps_of(n, es)) == 1:
+            out.append(frozenset(sub))
+    return out
+
+
+# ---------- prism classes ----------
+def prism_classes(nV, bedges):
+    """Enumerate spanning trees of G x K2; return classes[(S, D, M)] ->
+    set of valid x (frozenset of M-indices at level 1)."""
+    # prism vertices: v at level l -> 2v + l
+    pedges = []          # (u, w, kind, base_edge_index_or_vertex)
+    for i, (a, b) in enumerate(bedges):
+        pedges.append((2 * a, 2 * b, "h0", i))
+        pedges.append((2 * a + 1, 2 * b + 1, "h1", i))
+    for v in range(nV):
+        pedges.append((2 * v, 2 * v + 1, "rung", v))
+    N = 2 * nV
+    classes = defaultdict(set)
+    for sub in itertools.combinations(range(len(pedges)), N - 1):
+        es = [(pedges[i][0], pedges[i][1]) for i in sub]
+        if not (is_forest(N, es) and len(comps_of(N, es)) == 1):
+            continue
+        S, lvl = [], {}
+        for i in sub:
+            u, w, kind, ref = pedges[i]
+            if kind == "rung":
+                S.append(ref)
+            else:
+                lvl.setdefault(ref, []).append(0 if kind == "h0" else 1)
+        D = frozenset(e for e, ls in lvl.items() if len(ls) == 2)
+        M = tuple(sorted(e for e, ls in lvl.items() if len(ls) == 1))
+        x = frozenset(e for e in M if lvl[e] == [1])
+        classes[(frozenset(S), D, M)].add(x)
+    return classes
+
+
+def polarized_of(nV, bedges, S, D, M, X):
+    """The polarized lifts of a class: level-0 graph is a spanning tree."""
+    P = set()
+    for x in X:
+        lvl0 = [bedges[e] for e in D] + [bedges[e] for e in M if e not in x]
+        if len(lvl0) == nV - 1 and is_forest(nV, lvl0) and len(comps_of(nV, lvl0)) == 1:
+            P.add(x)
+    return P
+
+
+# ---------- candidate maps ----------
+def cand_nearest_polar(nV, bedges, S, D, M, X, P):
+    """Candidate: assign each valid x to the nearest polarized lift in
+    Hamming distance on the M-bits (ties -> lexicographically smallest
+    symmetric difference). Return fiber sizes."""
+    fibers = defaultdict(int)
+    ok = True
+    for x in X:
+        best, bd, tie = None, None, False
+        for p in P:
+            dxp = len(x ^ p)
+            if bd is None or dxp < bd:
+                best, bd, tie = p, dxp, False
+            elif dxp == bd:
+                tie = True
+                # canonical tie-break: smaller sorted symmetric difference
+                if tuple(sorted(x ^ p)) < tuple(sorted(x ^ best)):
+                    best = p
+        fibers[best] += 1
+    want = 2 ** (len(S) - 1)
+    ok = all(fibers[p] == want for p in P) and sum(fibers.values()) == len(X)
+    return ok, dict(fibers)
+
+
+def cand_swap_orbit(nV, bedges, S, D, M, X, P):
+    """Candidate: fibers = orbits of x under the group generated by
+    validity-preserving 'component reflections': for each subset that is a
+    union of components... (placeholder: global swap only). Checks whether
+    {p, pbar} covers X when |S| = 2."""
+    allM = frozenset(M)
+    covered = set()
+    for p in P:
+        covered.add(p)
+        covered.add(frozenset(allM - p))
+    return covered == X, None
+
+
+def run(candidates):
+    print(f"{'base':<12}{'classes':>8}", *(f"{name:>18}" for name, _ in candidates))
+    for gname, (nV, bedges) in base_graphs().items():
+        classes = prism_classes(nV, bedges)
+        results = {name: 0 for name, _ in candidates}
+        nclasses = 0
+        law_fail = 0
+        for (S, D, M), X in classes.items():
+            P = polarized_of(nV, bedges, S, D, M, X)
+            if len(X) != len(P) * 2 ** (len(S) - 1):
+                law_fail += 1
+                continue
+            nclasses += 1
+            for name, f in candidates:
+                ok, _ = f(nV, bedges, S, D, M, X, P)
+                if ok:
+                    results[name] += 1
+        assert law_fail == 0, f"{gname}: class-level law violated?!"
+        print(f"{gname:<12}{nclasses:>8}", *(f"{results[n]:>14}/{nclasses}" for n, _ in candidates))
+
+
+if __name__ == "__main__":
+    run([("nearest-polar", cand_nearest_polar)])
