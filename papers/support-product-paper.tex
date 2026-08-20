@@ -41,13 +41,18 @@ elementary inductive derivation of that formula and, more importantly,
 reducing the problem of a fully bijective proof --- open since
 \cite[Example~5.6.10]{ec2}, and still open in bijective form after
 Bernardi's combinatorial proofs \cite{bernardi} --- to a single per-level
-bijective step. We prove the full-support slice of that step by an explicit
-bijection, reformulate the general slice as a spanning-tree identity for
-\emph{partial doubles} of $G$, report an exactly verified spin-uniformity
-phenomenon (Bernardi's independence holds exactly for rooted-anywhere trees
-and provably fails for root-fixed ones), and record the experimental
-fine structure of the remaining step at the level of level-projections,
-including where its naive product law breaks.
+bijective step. We then prove the \emph{class-level law}: refining by the
+multiset $U$ of level-projected horizontal edges, the trees in each class
+$(S,U)$ number exactly $d(S,U)\,2^{|S|-1}$, where $d(S,U)$ counts the
+splittings of $U$ into a spanning tree and an $S$-rooted forest of $G$ ---
+and each splitting occurs among the trees of its class as an explicit
+\emph{polarized} representative. This proves every counting statement in
+the program down to its finest stratum; what remains open, and is stated
+precisely, is a canonical straightening map from arbitrary trees to
+polarized ones, which we supply in the acyclic-support case. We also
+record an exactly verified spin-uniformity phenomenon (Bernardi's
+independence holds exactly for rooted-anywhere trees and provably fails
+for root-fixed ones) that constrains the shape of any such map.
 \end{abstract}
 
 \section{Background}
@@ -208,70 +213,137 @@ rooted-anywhere ensemble; any bijection must fix the root only after the
 bits are extracted. This matches the shape of \eqref{eq:setform}, which is
 stated for a $2$-fold cover of the tree set rather than for rooted trees.
 
-\section{Fine structure of the remaining step}\label{sec:fine}
+\section{The class-level law}\label{sec:fine}
 
-Deleting (rather than contracting) the vertical edges of a tree $T$ with
-support $S$ leaves horizontal forests $H_0, H_1$ in the two levels;
+Fix $S$ and refine further. Deleting (rather than contracting) the rungs of
+a tree $T'$ with support $S$ leaves horizontal forests in the two levels;
 projecting both to $G$ gives an edge multiset $U$ with multiplicities in
-$\{1,2\}$, where a multiplicity-$1$ edge remembers a free level choice and
-a multiplicity-$2$ edge uses both levels. Vertex and edge counts show that
-$T$ is a tree if and only if the chosen level-lift of $(S,U)$ is connected.
-Exhaustively on $Q_3$ (base $Q_2$):
+$\{1,2\}$: write $D$ for the doubled edges (used in both levels), $M$ for
+the singletons ($m = |M|$, each carrying a free bit: which level), and
+$N(S,U)$ for the number of trees with data $(S,U)$. Call a pair $(T,F)$ a
+\emph{decomposition} of $(S,U)$ if $T$ is a spanning tree of $G$, $F$ is an
+$S$-rooted spanning forest of $G$, and $T \uplus F = U$ as multisets; let
+$d(S,U)$ be their number. Note that a decomposition determines its class:
+$D = T\cap F$ and $M = T \,\triangle\, F$.
 
-\begin{itemize}
-\item every occurring $U$ decomposes as (spanning tree of the base)
-$\uplus$ ($S$-rooted spanning forest of the base) --- the edge budgets
-match Theorem~\ref{thm:support} exactly --- and conversely every
-decomposable $(S,U)$ occurs;
-\item with $m$ the number of multiplicity-$1$ edges and $d$ the number of
-decompositions, every class satisfies the \emph{mass formula}
-$N(S,U)\cdot d = 2^m$ (the classes split as $d=1$ with all $2^m$ lifts
-connected, and $d=2$ with exactly half).
-\end{itemize}
+\begin{theorem}[class-level law]\label{thm:classlaw}
+For every connected $G$, every nonempty $S \subseteq V(G)$, and every
+multiset $U$,
+\[
+  N(S,U) \;=\; d(S,U)\cdot 2^{\,|S|-1}.
+\]
+\end{theorem}
 
-On $Q_4$ (base $Q_3$; all $42\,467\,328$ trees, $2\,459\,160$ classes) the
-mass formula holds in $95.7\%$ of classes; but the full data reveals a
-\emph{universal law} subsuming it. In every class of $Q_3$ and of $Q_4$
-without exception,
-\begin{equation}\label{eq:universal}
-  N(S,U) \;=\; d(S,U)\cdot 2^{\,m-2s}
-  \qquad\text{for some integer } s = s(S,U) \ge 0
-\end{equation}
-(observed $s \le 5$ on $Q_4$): the connected level-lifts distribute over
-the $d$ decompositions of $U$ in equal shares whose codimension in
-$\mathbb{F}_2^{\,m}$ is always \emph{even}. The mass formula is the special
-case $d = 2^s$. Probing the geometry: in a sample of $40$ exceptional
-classes, the set $V \subseteq \mathbb{F}_2^m$ of connected lifts was, in
-$22$ cases, exactly a union of $d$ cosets of its stabilizer subspace
-$W=\{x : V\oplus x = V\}$ with $\dim W = m-2s$; in the remaining $18$, $V$
-is a union of fewer, larger cosets with the decompositions clustering in
-groups of $4$ per coset. We conjecture \eqref{eq:universal} for all
-connected base graphs, and identifying the invariant $s(S,U)$ together with
-a canonical assignment of lifts to decompositions is, in our view, the
-combinatorial heart of \eqref{eq:setform}.
+\begin{proof}
+Introduce a variable $w_e$ for each edge $e$ of $G$ and $z_u$ for each
+$u \in V(G)$; in $G\times K_2$ weight \emph{both} copies of $e$ by $w_e$
+and the rung at $u$ by $z_u$. As in Theorem~\ref{thm:support}, the weighted
+Laplacian block-diagonalizes as $L_w \oplus (L_w + 2Z)$, where $L_w$ is the
+weighted Laplacian of $(G,w)$ and $Z = \operatorname{diag}(z_u)$, and the
+weighted tree sum of the prism,
+$t(w,z) = \sum_{T'} \prod_e w_e^{\#\text{copies of $e$ in } T'}
+\prod_{\text{rungs } u \in T'} z_u$, equals
+$\tfrac12\,\tau(w)\,\det(L_w + 2Z)$ with $\tau(w)$ the weighted
+spanning-tree sum of $G$. Expanding the determinant by principal minors in
+$2Z$ and applying the weighted all-minors Matrix-Tree theorem,
+\[
+  t(w,z) \;=\; \tfrac12\,\tau(w) \sum_{R \subseteq V} 2^{|R|}
+  \varphi_R(w) \prod_{u\in R} z_u,
+\]
+where $\varphi_R(w)$ is the weighted $R$-rooted spanning-forest sum. Both
+sides are multilinear in the $z_u$; the coefficient of
+$\prod_{u\in S} z_u$ gives
+\[
+  \sum_{T' :\, S(T') = S} \prod_e w_e^{\#\text{copies}}
+  \;=\; 2^{|S|-1}\,\tau(w)\,\varphi_S(w).
+\]
+Now extract the coefficient of $w^U := \prod_{e \in D} w_e^2
+\prod_{e\in M} w_e$. On the left this is $N(S,U)$. On the right, $\tau$ and
+$\varphi_S$ are multilinear in the $w_e$ (a tree or forest uses each edge
+at most once), so the coefficient of $w^U$ in the product counts exactly
+the pairs $(T, F)$ with $T \uplus F = U$, i.e.\ $d(S,U)$.
+\end{proof}
+
+Setting $w \equiv 1$ recovers Theorem~\ref{thm:support}, so the class-level
+law is the finest member of the family. It was found the other way around:
+exhaustive computation on $Q_3$ and $Q_4$ (all $132 + 2\,459\,160$ classes,
+from all $42\,467\,328$ spanning trees of $Q_4$) revealed the pattern
+$N = d\cdot 2^{m-2s}$ with $s$ equal to the cycle rank of the support of
+$U$, and the identity $m - 2\,\mathrm{rank} = |S|-1$ (an exercise with the
+edge budgets) collapsed it to the statement above, after which the proof
+was forced.
+
+\begin{proposition}[polarization]\label{prop:polar}
+Decompositions are themselves lifts: if $(T,F)$ decomposes $(S,U)$, then
+placing $T\cap M$ on level $0$ and $F \cap M$ on level $1$ (with $D$ on
+both) yields a spanning tree of $G\times K_2$ with data $(S,U)$. Hence
+$d(S,U)$ counts the \emph{polarized} trees in their class --- those whose
+level-$0$ graph is a spanning tree of $G$ and whose level-$1$ graph is an
+$S$-rooted forest.
+\end{proposition}
+
+\begin{proof}
+Level $0$ carries $D \cup (T\cap M) = T$, connected and acyclic; level $1$
+carries $D \cup (F \cap M) = F$, a forest with $|S|$ components, one per
+vertex of $S$. Each rung $u \in S$ joins the single level-$0$ component to
+the level-$1$ component containing $u$, and those components are pairwise
+distinct, so the component graph is a star --- a tree --- and the lift is a
+spanning tree. Conversely a tree whose level-$0$ graph is spanning
+connected and whose level-$1$ graph is $S$-rooted reads off a
+decomposition.
+\end{proof}
+
+\begin{proposition}[explicit bijection when the support is a tree]
+\label{prop:rzero}
+If the support of $U$ is a spanning tree of $G$ (equivalently $m = |S|-1$),
+then $d \le 1$; when $d = 1$, \emph{every} one of the $2^m$ level
+assignments yields a spanning tree, and the identity map on the $m = |S|-1$
+free bits, with the polarized lift as base point, realizes
+Theorem~\ref{thm:classlaw} bijectively.
+\end{proposition}
+
+\begin{proof}[Proof sketch]
+When $\operatorname{supp} U$ is a spanning tree, $T$ is forced to be that
+tree and $F = D$, so $d = 1$ iff $D$ is $S$-rooted. For validity of every
+assignment, induct: contract a leaf edge of the support lying in $D$
+(harmless on both sides), and otherwise a leaf edge $e = (u,\ell) \in M$
+has its leaf $\ell$ isolated in $D$, hence $\ell \in S$; whichever level
+$e$ is assigned, the fiber of $\ell$ attaches to the rest by $e$ and the
+rung at $\ell$, and deleting the fiber reduces to the same situation with
+$(S\setminus \ell,\ M \setminus e)$. Both choices of the bit extend every
+valid smaller assignment, giving the doubling and the explicit bijection.
+\end{proof}
 
 \section{Open problems}
 
+All counting in the program is now proven, down to the finest stratum. The
+sole remaining gap between the results above and a fully bijective proof of
+\eqref{eq:stanley} is a \emph{map}:
+
 \begin{problem}\label{prob:main}
-Construct an explicit bijection realizing \eqref{eq:setform} ---
-equivalently \eqref{eq:partial} for all $S$ --- for $G = Q_{n-1}$, or for
-arbitrary connected $G$. By Corollary~\ref{cor:telescope} this yields a
-bijective proof of \eqref{eq:stanley}, resolving the bijective form of the
-question of \cite[Example~5.6.10]{ec2}.
+For each class $(S,U)$, construct an explicit bijection
+\[
+  \{\text{spanning trees of } G\times K_2 \text{ with data } (S,U)\}
+  \;\longleftrightarrow\;
+  \{\text{decompositions } (T,F)\} \times \{0,1\}^{|S|-1},
+\]
+compatible with Proposition~\ref{prop:polar} (each tree's image should name
+its \emph{polarized normal form}). Proposition~\ref{prop:rzero} solves the
+acyclic-support classes; empirically the fibers over decompositions are
+(usually) cosets of a subspace of the bit space $\mathbb F_2^M$, so a
+straightening algorithm by cycle-by-cycle rerouting is the natural
+candidate shape. By Theorem~\ref{thm:classlaw} and
+Corollary~\ref{cor:telescope}, such a construction, iterated over the $n$
+directions, is a bijective proof of Stanley's formula, resolving the
+bijective form of \cite[Example~5.6.10]{ec2}.
 \end{problem}
 
 \begin{problem}
-Prove the universal law \eqref{eq:universal} and identify the invariant
-$s(S,U)$; determine when the connected lifts form exactly $d$ cosets of a
-subspace of dimension $m-2s$, and construct the canonical assignment of
-lifts to decompositions in general.
-\end{problem}
-
-\begin{problem}
-Make Bernardi's spin-flip independence constructive on rooted-anywhere
-trees (his proof is an induction through vertex deletions and arc
-mergings), and determine its interaction with the contraction map of
-Proposition~\ref{prop:full}.
+Relate the straightening of Problem~\ref{prob:main} to Bernardi's
+spin-flip independence \cite[Thm.~1]{bernardi}: his inductive rerouting
+realizes free bits on rooted forests; ours must realize $|S|-1$ free bits
+per class on unrooted trees. A dictionary between the two would likely
+supply the map.
 \end{problem}
 
 \begin{thebibliography}{9}

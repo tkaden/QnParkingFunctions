@@ -91,6 +91,34 @@ Bernardi's rerouting involutions for the bit part, and only then quotient by
 the 2^n root choices to reach parking functions rooted at q. Files:
 `q3_spins.txt`, `q4_spins_sampled.txt`, `q5_spins_sampled.txt`.
 
+## THE CLASS-LEVEL LAW IS A THEOREM (proved 2026-08-20, late session)
+
+For every connected G, every S, every projection multiset U:
+
+    N(S,U) = d(S,U) * 2^(|S|-1)
+
+where d(S,U) = #splittings of U into (spanning tree of G) + (S-rooted
+forest). Proof: per-edge variables w_e on both copies + rung variables z_u;
+prism Laplacian block-diagonalizes as L_w + (L_w + 2Z); tree sum =
+(1/2) tau(w) det(L_w + 2Z); all-minors expansion; extract the z_S
+coefficient then the w^U coefficient — multilinearity of tree/forest
+enumerators makes the RHS coefficient exactly d(S,U). (In the paper as
+Theorem "class-level law".) The empirical forms N = d*2^(m-2s) with
+s = cycle rank of supp(U) follow from the edge-budget identity
+m - 2*rank = |S| - 1 (holds for every class containing a decomposition).
+Verified beforehand on all 132 Q3 + 2,459,160 Q4 classes.
+
+Also PROVED: (i) POLARIZATION — every decomposition (T,F) IS a tree of its
+class (T on level 0, F on level 1; the component graph is a star), so
+d counts the "polarized" trees; (ii) the ACYCLIC-SUPPORT case has a fully
+explicit bijection (leaf induction; the |S|-1 free bits are literally the
+levels of the singleton edges).
+
+REMAINING OPEN (the only gap to the bijective proof of Stanley's formula):
+an explicit straightening map trees-of-class <-> decompositions x
+{0,1}^(|S|-1) whose fibers name polarized normal forms. All counting is
+now theorem; only the map is missing.
+
 ## The support-product THEOREM (upgraded from conjecture 2026-08-19)
 
 PROVEN, for any connected base graph G: #spanning trees of G x K_2 with
